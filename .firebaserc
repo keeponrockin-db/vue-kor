@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "test-keeponrockin",
+    "test": "test-keeponrockin"
+  }
+}

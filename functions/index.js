@@ -51,12 +51,15 @@ api.get('/matches', (request, response) => {
       .toArray()
       .then(matches => ({client, matches}))
     )
+    .then(({client, matches}) => deserializeMatches(client, matches)
+      .then((matches) => {
+        return ({client, matches})
+      })
+    )
     .then(({client, matches}) => {
-      matches = deserializeMatches(client, matches)
       client.close()
-      return matches
+      response.status(200).json(matches)
     })
-    .then(matches => response.json(matches))
     .catch(error => response.status(400).send(error.toString()))
 })
 
@@ -68,7 +71,7 @@ function formPlayerQuery (query) {
 }
 
 function formMatchQuery (query, players) {
-  if (query.video) { return { video: query.video } }
+  if (query.v) { return { video: query.v } }
 
   players = players.map(player => ({
     aliases: player.aliases.map(alias => alias.toLowerCase()),
@@ -125,39 +128,53 @@ function formMatchQuery (query, players) {
 function deserializeMatches (client, matches) {
   let playerIds = []
   matches.forEach((match) => {
+    delete match._id
     match.players.forEach((player) => {
       playerIds.push(ObjectId(player.id))
     })
   })
 
   return client.db()
-    .collection('players')
-    .find({_id: {$in: playerIds}})
+    .collection('characters')
+    .find()
     .toArray()
-    .then(players => {
-      return matches.map(match => {
-        let deserializedMatch = {
-          video: match.video,
-          title: match.title,
-          channel: match.channel,
-          date: match.date,
-          version: match.version,
-          timestamp: match.timestamp,
-          players: [{aliases: [], characters: []}, {aliases: [], characters: []}]
+    .then(characters => {
+      let characterLookup = {}
+      characters.forEach(character => {
+        characterLookup[character.id] = {
+          id: character.id,
+          name: character.name,
+          iconUrl: character.iconUrl
         }
-        for (let i = 0; i < 2; i++) {
-          let player = players.find(player => player._id.equals(ObjectId(match.players[i].id)))
-          deserializedMatch.players[i].name = player.name
-          deserializedMatch.players[i].aliases = player.aliases
-
-          match.players[i].characters.forEach(character => {
-            deserializedMatch.players[i].characters.push({id: character})
-          })
-        }
-
-        return deserializedMatch
       })
+      matches = matches.map(match => {
+        for (let i = 0; i < 2; i++) {
+          let playerCharacters = []
+          match.players[i].characters.forEach(character => {
+            playerCharacters.push(characterLookup[character])
+          })
+          match.players[i].characters = playerCharacters
+        }
+        return match
+      })
+      return ({matches})
     })
+    .then(({matches}) => client.db()
+      .collection('players')
+      .find({_id: {$in: playerIds}})
+      .toArray()
+      .then(players => {
+        return matches.map(match => {
+          for (let i = 0; i < 2; i++) {
+            let player = players.find(player => player._id.equals(ObjectId(match.players[i].id)))
+            match.players[i].name = player.name
+            match.players[i].aliases = player.aliases
+            delete match.players[i].id
+          }
+          return match
+        })
+      })
+    )
 }
 
 api.put('/matches', (request, response) => {
@@ -185,8 +202,10 @@ api.put('/matches', (request, response) => {
       return client.db()
         .collection('matches')
         .insert(matches)
+        .then((results) => ({client, results}))
     })
-    .then((results) => {
+    .then(({client, results}) => {
+      client.close()
       response.status(200).json(results)
     })
     .catch(error => response.status(400).send(error.toString()))
@@ -261,5 +280,64 @@ function fillPlayerIds (client, matches) {
       return ({client, matches})
     })
 }
+
+api.get('/characters', (request, response) => {
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('characters')
+      .toArray()
+      .then(characters => ({client, characters}))
+    )
+    .then(({client, characters}) => {
+      client.close()
+      return characters
+    })
+    .then(characters => response.json(characters))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.put('/character', (request, response) => {
+  return connectMongoDB()
+    .then(client => {
+      let character = {
+        name: request.body.name,
+        id: request.body.newId,
+        iconUrl: request.body.iconUrl
+      }
+      let id = request.body.oldId || request.body.newId
+      return ({client, character, id})
+    })
+    .then(({client, character, id}) => {
+      if (id !== character.id) {
+        // fix up matches
+      }
+      return ({client, character, id})
+    })
+    .then(({client, character, id}) => client.db()
+      .collection('characters')
+      .updateOne({id: id}, {$set: character}, {upsert: true})
+      .then((results) => ({client, results}))
+    )
+    .then(({client, results}) => {
+      client.close()
+      response.status(200).json(results)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.get('/players', (request, response) => {
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('players')
+      .toArray()
+      .then(players => ({client, players}))
+    )
+    .then(({client, players}) => {
+      client.close()
+      return players
+    })
+    .then(players => response.json(players))
+    .catch(error => response.status(400).send(error.toString()))
+})
 
 exports.api = functions.https.onRequest(api)

@@ -11,9 +11,13 @@
           <router-link :to="{ query: { channel: channel.id }}">{{ channel.name }}</router-link>
         </v-flex>
         <v-flex v-for="(player, i) in players" :key=i>
-          <v-layout row>
+          <v-layout row align-center>
             <div v-for="(character, j) in player.characters" :key=j>
-              (<router-link :to="'?p' + (i + 1) + 'chars=' + character.id">{{ character.id }}</router-link>)
+              <router-link :to="'?p' + (i + 1) + 'chars=' + character.id">
+                <v-avatar class="ma-1" size="35px">
+                  <img :src="character.iconUrl" :alt="character.name">
+                </v-avatar>
+              </router-link>
             </div>
             <div>
               <router-link :to="'?p' + (i + 1) + '=' + player.name">{{ player.name }}</router-link>

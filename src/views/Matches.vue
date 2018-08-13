@@ -4,7 +4,7 @@
       <v-flex xs8 offset-xs2>
         <v-card-text>
           <v-layout v-for="i in [1, 2]" :key="i">
-            <v-menu v-for="j in $numberOfChars" :key="j">
+            <v-menu v-for="j in $config.teamSize" :key="j">
               <v-btn slot="activator" icon><v-icon>mdi-account-outline</v-icon></v-btn>
               <v-list>
                 <v-list-tile>
@@ -27,13 +27,13 @@
         </v-card-text>
       </v-flex>
     </v-card>
-    <v-progress-linear indeterminate v-show="loading"/>
     <v-alert dismissible v-model="error" type="error">
       {{ this.errorMessage }}
     </v-alert>
     <v-alert dismissible type="info" :value="!loading && matches.length === 0">
       No matches were found
     </v-alert>
+    <v-progress-linear indeterminate v-show="loading"/>
     <MatchRow v-if="!loading" v-for="(match, i) in matches" :key="i" v-bind="match"/>
     <v-footer class="mt-2">
       <v-spacer/>
@@ -70,6 +70,7 @@ export default {
   }),
   created: function () {
     this.getMatches(this.query)
+    console.log(this.$config)
   },
   watch: {
     '$route.query': function (query) {

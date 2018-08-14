@@ -7,7 +7,7 @@ firebase.initializeApp(config.firebaseConfig)
 
 Vue.use(VueResource)
 
-let uri = config.cloudFn
+let uri = config.localCloudFn
 let apiMethods = {
   getMatches: {
     method: 'GET',
@@ -16,6 +16,14 @@ let apiMethods = {
   saveMatches: {
     method: 'PUT',
     url: uri + 'matches'
+  },
+  getVersions: {
+    method: 'GET',
+    url: uri + 'versions'
+  },
+  saveVersion: {
+    method: 'PUT',
+    url: uri + 'version'
   },
   getCharacters: {
     method: 'GET',
@@ -28,9 +36,15 @@ let apiMethods = {
   getPlayers: {
     method: 'GET',
     url: uri + 'players'
+  },
+  getYoutubeData: {
+    method: 'GET',
+    url: uri + 'youtubeData'
   }
 }
 let api = Vue.resource(uri, {}, apiMethods)
+
+Vue.prototype.$config = config
 
 Vue.use({
   install: () => {
@@ -42,5 +56,3 @@ Vue.use({
     })
   }
 })
-
-Vue.prototype.$config = config

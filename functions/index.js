@@ -11,6 +11,9 @@ const MongoClient = require('mongodb').MongoClient
 const ObjectId = require('mongodb').ObjectId
 const connectMongoDB = () => MongoClient.connect(process.env.MONGODB)
 
+const youtubeKey = process.env.YOUTUBEKEY
+const axios = require('axios')
+
 const itemsPerPage = 15
 const defaultSort = {
   date: -1,
@@ -281,10 +284,54 @@ function fillPlayerIds (client, matches) {
     })
 }
 
+api.get('/versions', (request, response) => {
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('versions')
+      .find()
+      .toArray()
+      .then(versions => ({client, versions}))
+    )
+    .then(({client, versions}) => {
+      client.close()
+      return versions
+    })
+    .then(versions => response.json(versions))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.put('/version', (request, response) => {
+  return connectMongoDB()
+    .then(client => {
+      let version = {
+        name: request.body.name
+      }
+      let id = request.body.id
+      return ({client, version, id})
+    })
+    .then(({client, version, id}) => {
+      if (id) {
+        // fix up matches
+      }
+      return ({client, version, id})
+    })
+    .then(({client, version, id}) => client.db()
+      .collection('versions')
+      .updateOne({id: id}, {$set: version}, {upsert: true})
+      .then((results) => ({client, results}))
+    )
+    .then(({client, results}) => {
+      client.close()
+      response.status(200).json(results)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
 api.get('/characters', (request, response) => {
   return connectMongoDB()
     .then(client => client.db()
       .collection('characters')
+      .find()
       .toArray()
       .then(characters => ({client, characters}))
     )
@@ -329,6 +376,7 @@ api.get('/players', (request, response) => {
   return connectMongoDB()
     .then(client => client.db()
       .collection('players')
+      .find()
       .toArray()
       .then(players => ({client, players}))
     )
@@ -337,6 +385,29 @@ api.get('/players', (request, response) => {
       return players
     })
     .then(players => response.json(players))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.get('/youtubeData', (request, response) => {
+  let url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
+    request.query.v + '&key=' + youtubeKey
+  return axios.get(url)
+    .then((youtube) => {
+      if (youtube.data.items.length > 0) {
+        response.json({
+          id: request.query.v,
+          title: youtube.data.items[0].snippet.title,
+          date: youtube.data.items[0].snippet.publishedAt.split('T')[0],
+          description: youtube.data.items[0].snippet.description,
+          channel: {
+            id: youtube.data.items[0].snippet.channelId,
+            name: youtube.data.items[0].snippet.channelTitle
+          }
+        })
+      } else {
+        response.status(400).send('Invalid video')
+      }
+    })
     .catch(error => response.status(400).send(error.toString()))
 })
 

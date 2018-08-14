@@ -1,31 +1,40 @@
 <template>
   <div>
     <v-card>
-      <v-flex xs8 offset-xs2>
-        <v-card-text>
-          <v-layout v-for="i in [1, 2]" :key="i">
-            <v-menu v-for="j in $config.teamSize" :key="j">
-              <v-btn slot="activator" icon><v-icon>mdi-account-outline</v-icon></v-btn>
-              <v-list>
-                <v-list-tile>
-                </v-list-tile>
-              </v-list>
-            </v-menu>
-            <v-autocomplete :label="'Player ' + i"/>
-          </v-layout>
-          <v-layout column v-show="expandSearch">
-            <v-text-field label="Title"/>
-            <v-combobox label="Versions"/>
-            <v-combobox label="Channels"/>
-          </v-layout>
-          <v-layout justify-center>
-            <v-btn icon @click="expandSearch = !expandSearch">
-              <v-icon v-if="!expandSearch">mdi-chevron-down</v-icon>
-              <v-icon v-if="expandSearch">mdi-chevron-up</v-icon>
+      <v-card-text>
+        <v-layout v-for="i in [1, 2]" :key="i">
+          <v-menu transition="slide-y-transition" v-for="j in $config.teamSize" :key="j">
+            <v-btn slot="activator" icon>
+              <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
+                mdi-account-outline
+              </v-icon>
+              <v-avatar class="mr-1" size="36px" v-if="selectedCharacters[i - 1][j - 1]">
+                <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>
+              </v-avatar>
             </v-btn>
-          </v-layout>
-        </v-card-text>
-      </v-flex>
+            <v-list v-for="character in characters">
+              <v-list-tile @click="selectCharacter(i, j, character.id)">
+                <v-avatar class="mr-1" size="36px">
+                  <img :src="character.iconUrl" :alt="character.name">
+                </v-avatar>
+                {{ character.name }}
+              </v-list-tile>
+            </v-list>
+          </v-menu>
+          <v-autocomplete :label="'Player ' + i"/>
+        </v-layout>
+        <v-layout column v-show="expandSearch">
+          <v-text-field label="Title"/>
+          <v-combobox label="Versions"/>
+          <v-combobox label="Channels"/>
+        </v-layout>
+        <v-layout justify-center>
+          <v-btn icon @click="expandSearch = !expandSearch">
+            <v-icon v-if="!expandSearch">mdi-chevron-down</v-icon>
+            <v-icon v-if="expandSearch">mdi-chevron-up</v-icon>
+          </v-btn>
+        </v-layout>
+      </v-card-text>
     </v-card>
     <v-alert dismissible v-model="error" type="error">
       {{ this.errorMessage }}
@@ -66,30 +75,32 @@ export default {
     matches: [],
     loading: false,
     error: false,
-    errorMessage: ''
+    errorMessage: '',
+    characters: {},
+    selectedCharacters: [[], []]
   }),
   created: function () {
     this.getMatches(this.query)
-    console.log(this.$config)
+    this.$api.getCharacters().then(response => {
+      let characters = {}
+      response.body.forEach((character) => {
+        characters[character.id] = character
+      })
+      this.characters = characters
+      this.updateSelectedCharacters()
+    })
   },
   watch: {
     '$route.query': function (query) {
       this.query = query
     },
     page: function (page) {
-      let query = {
-        p1: this.query.p1,
-        p1chars: this.query.p1chars,
-        p2: this.query.p2,
-        p2chars: this.query.p2chars,
-        v: this.query.v,
-        version: this.query.version,
-        channel: this.query.channel,
-        page: page
-      }
-      this.$router.replace({ path: '/', query: query })
+      let query = Object.assign({}, this.query)
+      query.page = page
+      this.$router.push({ path: '/', query: query })
     },
     query: function (query) {
+      this.updateSelectedCharacters()
       this.getMatches(query)
       this.page = query.page || 1
     }
@@ -107,6 +118,31 @@ export default {
           this.errorMessage = response.status + ': ' + response.statusText
         }
       })
+    },
+    updateSelectedCharacters: function () {
+      for (let i = 0; i < 2; i++) {
+        if (this.query['p' + (i + 1) + 'chars']) {
+          let queryCharacters = this.query['p' + (i + 1) + 'chars'].split(',')
+          for (let j = 0; j < this.$config.teamSize; j++) {
+            this.selectedCharacters[i][j] = this.characters[queryCharacters[j]]
+          }
+        } else {
+          this.selectedCharacters[i] = []
+        }
+      }
+    },
+    selectCharacter: function (playerNumber, characterPosition, characterId) {
+      let playerQuery = ''
+      if (this.query['p' + playerNumber + 'chars']) {
+        let queryCharacters = this.query['p' + playerNumber + 'chars'].split(',')
+        queryCharacters[characterPosition - 1] = characterId
+        playerQuery = queryCharacters.join(',')
+      } else {
+        playerQuery = characterId
+      }
+      let query = Object.assign({}, this.query)
+      query['p' + playerNumber + 'chars'] = playerQuery
+      this.$router.push({ path: '/', query: query })
     }
   }
 }

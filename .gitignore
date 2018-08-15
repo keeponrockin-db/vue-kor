@@ -21,3 +21,9 @@ yarn-error.log*
 *.sw*
 
 functions/\.env
+
+\.env
+
+cloud-key\.json
+
+src/config\.js

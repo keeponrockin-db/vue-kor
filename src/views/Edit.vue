@@ -36,53 +36,71 @@
             <v-text-field prepend-icon="event" readonly label="Date" v-model="video.date"/>
             <v-textarea readonly label="Description" v-model="video.description"/>
           </v-layout>
-          <v-btn v-if="!error" @click="step = 3">Next</v-btn>
-          <v-btn @click="startOver">Start over</v-btn>
+          <v-btn @click="startOver">
+            <v-icon left>undo</v-icon>
+            Start over
+          </v-btn>
+          <v-btn v-if="!error && !loading" @click="step = 3">
+            <v-icon left>arrow_right_alt</v-icon>
+            Next
+          </v-btn>
         </v-stepper-content>
         <v-stepper-content step="3">
-          <v-select label="Version" :items="versions" item-text="name"/>
+          <v-text-field readonly label="Title" v-model="video.title"/>
+          <v-text-field readonly label="Channel" v-model="video.channel.name"/>
+          <v-text-field prepend-icon="event" readonly label="Date" v-model="video.date"/>
           <v-textarea label="Description" v-model="manualEntry"/>
           <v-btn @click="parse">Parse</v-btn>
+          <v-select label="Version" :items="versions" item-text="name" v-model="video.version"/>
           <v-card v-for="(match, i) in matches" :key="i">
-            <v-layout>
-              <v-text-field
-                class="ma-2"
-                label="Timestamp"
+            <v-layout fill-height align-center>
+              <v-text-field label="Timestamp"
+                class="mr-1"
                 hint="**h**m**s"
                 :rules="[validateTimestamp]"
-                v-model="match.timestamp"/>
-              <v-layout v-for="j in [1, 2]" :key="j">
+                v-model="match.timestamp"
+              />
+              <v-layout row v-for="j in [1, 2]" :key="j" :reverse="j === 1">
                 <v-menu transition="slide-y-transition" v-for="k in $config.teamSize" :key="k">
-                  <v-btn class="mb-4" slot="activator" icon>
-                    <v-icon>
+                  <v-btn slot="activator" icon>
+                    <v-icon v-if="!match['p' + j + 'chars'][k - 1]">
                       mdi-account-outline
                     </v-icon>
-                    <v-avatar class="mr-1" size="36px" v-if="false">
-                      <img/>
+                    <v-avatar class="mr-1" size="36px" v-if="match['p' + j + 'chars'][k - 1]">
+                      <img :src="characters[match['p' + j + 'chars'][k - 1]].iconUrl"/>
                     </v-avatar>
                   </v-btn>
-                  <v-list v-for="character in characters">
-                    <v-list-tile @click="">
-                      <v-avatar class="mr-1" size="36px">
+                  <v-list v-for="character in characters" :key="character.id">
+                    <v-list-tile @click="match['p' + j + 'chars'][k - 1] = character">
+                      <v-avatar size="36px">
                         <img :src="character.iconUrl" :alt="character.name">
                       </v-avatar>
                       {{ character.name }}
                     </v-list-tile>
                   </v-list>
                 </v-menu>
-                <v-autocomplete class="ma-2" :label="'Player ' + j" v-model="match['p' + j]"/>
-                <h2 class="mt-2" v-if="j === 1">vs</h2>
+                <v-combobox :label="'Player ' + j" :items="aliases" v-model="match['p' + j]"/>
               </v-layout>
               <a target="_blank" :href="'https://www.youtube.com/watch?v=' + video.id + '&t=' + (match.timestamp || '00h00m00s')">
                 <v-btn icon><v-icon>mdi-youtube</v-icon></v-btn>
               </a>
-              <v-btn icon><v-icon>mdi-swap-horizontal</v-icon></v-btn>
+              <v-btn icon @click="swapPlayers(match)"><v-icon>swap_horiz</v-icon></v-btn>
               <v-btn icon @click="duplicateMatch(match)"><v-icon>mdi-content-duplicate</v-icon></v-btn>
               <v-btn icon @click="deleteMatch(match)"><v-icon>delete</v-icon></v-btn>
             </v-layout>
           </v-card>
-          <v-btn @click="addMatch">Add Match</v-btn>
-          <v-btn @click="startOver">Start over</v-btn>
+          <v-btn @click="startOver">
+            <v-icon left>undo</v-icon>
+            Start over
+          </v-btn>
+          <v-btn @click="addMatch">
+            <v-icon left>playlist_add</v-icon>
+            Add Match
+          </v-btn>
+          <v-btn v-if="!loading" @click="save">
+            <v-icon left>save</v-icon>
+            Save
+          </v-btn>
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
@@ -90,10 +108,11 @@
       <v-spacer/>
       <v-dialog v-model="admin" fullscreen hide-overlay transition="dialog-bottom-transition">
         <v-btn slot="activator">
+          <v-icon left>settings</v-icon>
           Admin Settings
         </v-btn>
         <v-card>
-          <v-toolbar dark color="primary">
+          <v-toolbar dark>
             <v-toolbar-title>Admin Settings</v-toolbar-title>
             <v-spacer/>
             <v-btn icon dark @click.native="admin = false">
@@ -110,9 +129,9 @@
           <v-layout column>
             <v-form class="pa-4">
               <h3 class="mb-2">Versions</h3>
-              <v-layout row>
-                <v-select class="ma-2" label="Edit Version"
-                  :items="versions"
+              <v-layout row align-center>
+                <v-select label="Edit Version"
+                  :items="[{ name: 'New Version'}].concat(versions)"
                   item-text="name"
                   :item-value="(version) => ({
                     id: version._id,
@@ -122,26 +141,26 @@
                 />
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
-              <v-layout row>
-                <v-text-field class="ma-2" label="Name" v-model="editVersion.name"/>
+              <v-layout row align-center>
+                <v-text-field label="Name" v-model="editVersion.name"/>
                 <v-btn icon><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3 class="mb-2">Characters</h3>
-              <v-layout row>
-                <v-select class="ma-2" label="Edit Character"
-                  :items="charactersList" 
+              <v-layout row align-center>
+                <v-select label="Edit Character"
+                  :items="[{ name: 'New Character'}].concat(charactersList)"
                   item-text="name"
-                  :item-value="(character) => ({ 
-                    id: character.id, 
-                    name: character.name, 
-                    newId: character.id, 
+                  :item-value="(character) => ({
+                    id: character.id,
+                    name: character.name,
+                    newId: character.id,
                     iconUrl: character.iconUrl
                   })"
                   v-model="editCharacter"
                 />
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
-              <v-layout row>
+              <v-layout row align-center>
                 <input
                   type="file"
                   style="display: none"
@@ -150,28 +169,28 @@
                   @change="onCharacterIconPicked"
                 />
                 <v-btn icon @click="pickCharacterIcon">
-                  <v-icon v-if="!editCharacter.iconUrl">mdi-image-plus</v-icon>
+                  <v-icon v-if="!editCharacter.iconUrl">add_photo_alternate</v-icon>
                   <v-avatar v-if="editCharacter.iconUrl" size="36px">
                     <img :src="editCharacter.iconUrl">
                   </v-avatar>
                 </v-btn>
-                <v-text-field class="ma-2" label="Name" v-model="editCharacter.name"/>
-                <v-text-field class="ma-2" label="Id" v-model="editCharacter.newId"/>
+                <v-text-field label="Name" class="mr-1" v-model="editCharacter.name"/>
+                <v-text-field label="Id" v-model="editCharacter.newId"/>
                 <v-btn icon @click="saveCharacter"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3>Players</h3>
-              <v-layout row>
-                <v-autocomplete class="ma-2" label="Edit Player"/>
+              <v-layout row align-center>
+                <v-autocomplete label="Edit Player" :items="aliases"/>
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
-              <v-layout row>
-                <v-select class="ma-2" label="Edit Alias"/>
-                <v-text-field class="ma-2" label="New Alias"/>
+              <v-layout row align-center>
+                <v-select label="Edit Alias" class="mr-1"/>
+                <v-text-field label="New Alias"/>
                 <v-btn icon><v-icon>save</v-icon></v-btn>
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
-              <v-layout row>
-                <v-autocomplete class="ma-2" label="Merge with Player"/>
+              <v-layout row align-center>
+                <v-autocomplete label="Merge with Player" :items="aliases"/>
                 <v-btn icon><v-icon>save</v-icon></v-btn>
               </v-layout>
             </v-form>
@@ -189,11 +208,6 @@ export default {
     v: String
   },
   data: () => ({
-    versions: [],
-    editVersion: {},
-    characters: {},
-    charactersList: [],
-    editCharacter: {},
     step: 1,
     link: '',
     video: {
@@ -204,6 +218,11 @@ export default {
       description: '',
       version: ''
     },
+    aliases: [],
+    versions: [],
+    editVersion: {},
+    characters: {},
+    charactersList: [],
     matches: [],
     loading: false,
     success: false,
@@ -228,18 +247,9 @@ export default {
     }
   }),
   created: function () {
-    this.$api.getCharacters().then(response => {
-      let characters = {}
-      response.body.forEach((character) => {
-        characters[character.id] = character
-      })
-      this.charactersList = response.body
-      this.characters = characters
-    })
-    this.$api.getVersions().then(response => {
-      this.versions = response.body
-    })
-
+    this.loadCharacters()
+    this.loadPlayers()
+    this.loadVersions()
     if (this.v) {
       this.link = 'https://www.youtube.com/watch?v=' + this.v
       this.validateYoutubeURL(this.link)
@@ -250,11 +260,37 @@ export default {
       if (step === 2) {
         this.validateYoutubeID()
       } else if (step === 3) {
-        this.manualEntry = this.video.description 
+        this.manualEntry = this.video.description
+        this.loadMatches()
       }
     }
   },
   methods: {
+    loadCharacters: function () {
+      this.$api.getCharacters().then(response => {
+        let characters = {}
+        response.body.forEach((character) => {
+          characters[character.id] = character
+        })
+        this.charactersList = response.body
+        this.characters = characters
+      })
+    },
+    loadPlayers: function () {
+      this.$api.getPlayers().then(response => {
+        response.body.forEach((player) => {
+          player.aliases.forEach((alias) => {
+            this.aliases.push(alias)
+          })
+        })
+        this.aliases.sort()
+      })
+    },
+    loadVersions: function () {
+      this.$api.getVersions().then(response => {
+        this.versions = response.body
+      })
+    },
     validateYoutubeURL: function (value) {
       let pattern = /.*youtu(?:(?:.be\/)|(?:be.*\/watch\?v=))([a-zA-Z0-9_-]{11})/
       let matches = value.match(pattern)
@@ -267,7 +303,7 @@ export default {
       }
     },
     validateYoutubeID: function () {
-      this.adminLoading = true
+      this.loading = true
       this.video.channel = ''
       this.video.date = ''
       this.video.description = ''
@@ -275,7 +311,8 @@ export default {
 
       return this.$api.getYoutubeData({ v: this.video.id })
         .then((response) => {
-          this.adminLoading = false
+          this.loading = false
+          this.error = false
           if (response.ok) {
             this.video.channel = response.body.channel
             this.video.date = response.body.date
@@ -284,9 +321,36 @@ export default {
           }
         })
         .catch((error) => {
+          this.step = 1
+          this.loading = false
           this.errorMessage = error.bodyText + ' (' + this.link + ')'
           this.error = true
         })
+    },
+    loadMatches: function () {
+      this.loading = true
+      this.$api.getMatches({ v: this.video.id }).then((response) => {
+        this.loading = false
+        if (response.ok && response.body.length > 0) {
+          this.video.version = { name: response.body[0].version }
+          this.matches = response.body.map((match) => {
+            let editableMatch = {
+              timestamp: match.timestamp
+            }
+
+            for (let i = 0; i < 2; i++) {
+              editableMatch['p' + (i + 1)] = match.players[i].name
+              let characters = []
+              match.players[i].characters.forEach((character) => {
+                characters.push(character.id)
+              })
+              editableMatch['p' + (i + 1) + 'chars'] = characters
+            }
+
+            return editableMatch
+          })
+        }
+      })
     },
     validateTimestamp: function (value) {
       let pattern = /[0-9]{2}(?:h|H)[0-9]{2}(?:m|M)[0-9]{2}(?:s|S)/
@@ -312,11 +376,24 @@ export default {
       }
       this.matches.push(newMatch)
     },
+    swapPlayers: function (match) {
+      let p1 = match.p1
+      let p1chars = match.p1chars
+      match.p1 = match.p2
+      match.p1chars = match.p2chars
+      match.p2 = p1
+      match.p2chars = p1chars
+    },
     duplicateMatch: function (match) {
-      // TODO: implement
+      let index = this.matches.indexOf(match)
+      let newMatch = Object.assign({}, match)
+      this.matches.splice(index, 0, newMatch)
     },
     deleteMatch: function (match) {
       this.matches.splice(this.matches.indexOf(match), 1)
+    },
+    save: function () {
+      // TODO: implement
     },
     pickCharacterIcon: function () {
       this.$refs.characterIcon.click()
@@ -357,6 +434,7 @@ export default {
               this.adminErrorMessage = ''
               this.adminError = false
               this.matches = response.body
+              this.loadCharacters()
             } else {
               this.adminSuccessMessage = ''
               this.adminSuccess = false
@@ -367,9 +445,9 @@ export default {
         })
     },
     uploadCharacterIcon: function () {
-      if (!this.newCharacterIcon.filename || 
-        !this.newCharacterIcon.file || 
-        !this.editCharacter.name || 
+      if (!this.newCharacterIcon.filename ||
+        !this.newCharacterIcon.file ||
+        !this.editCharacter.name ||
         !this.editCharacter.newId) {
         return
       }

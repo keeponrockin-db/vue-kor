@@ -7,7 +7,7 @@ firebase.initializeApp(config.firebaseConfig)
 
 Vue.use(VueResource)
 
-let uri = config.localCloudFn
+let uri = config.cloudFn
 let apiMethods = {
   getMatches: {
     method: 'GET',

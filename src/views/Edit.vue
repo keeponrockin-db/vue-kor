@@ -51,7 +51,7 @@
           <v-text-field prepend-icon="event" readonly label="Date" v-model="video.date"/>
           <v-textarea label="Description" v-model="manualEntry"/>
           <v-btn @click="parse">Parse</v-btn>
-          <v-select label="Version" :items="versions" item-text="name" v-model="video.version"/>
+          <v-select label="Version" :items="versions" v-model="video.version"/>
           <v-card v-for="(match, i) in matches" :key="i">
             <v-layout fill-height align-center>
               <v-text-field label="Timestamp"
@@ -63,15 +63,15 @@
               <v-layout row v-for="j in [1, 2]" :key="j" :reverse="j === 1">
                 <v-menu transition="slide-y-transition" v-for="k in $config.teamSize" :key="k">
                   <v-btn slot="activator" icon>
-                    <v-icon v-if="!match['p' + j + 'chars'][k - 1]">
+                    <v-icon v-if="!match.players[j - 1].characters[k - 1]">
                       mdi-account-outline
                     </v-icon>
-                    <v-avatar class="mr-1" size="36px" v-if="match['p' + j + 'chars'][k - 1]">
-                      <img :src="characters[match['p' + j + 'chars'][k - 1]].iconUrl"/>
+                    <v-avatar class="mr-1" size="36px" v-if="match.players[j - 1].characters[k - 1]">
+                      <img :src="characters[match.players[j - 1].characters[k - 1]].iconUrl"/>
                     </v-avatar>
                   </v-btn>
                   <v-list v-for="character in characters" :key="character.id">
-                    <v-list-tile @click="match['p' + j + 'chars'][k - 1] = character">
+                    <v-list-tile @click="match.players[j - 1].characters[k - 1] = character">
                       <v-avatar size="36px">
                         <img :src="character.iconUrl" :alt="character.name">
                       </v-avatar>
@@ -79,7 +79,7 @@
                     </v-list-tile>
                   </v-list>
                 </v-menu>
-                <v-combobox :label="'Player ' + j" :items="aliases" v-model="match['p' + j]"/>
+                <v-combobox :label="'Player ' + j" :items="aliases" v-model="match.players[j - 1].name"/>
               </v-layout>
               <a target="_blank" :href="'https://www.youtube.com/watch?v=' + video.id + '&t=' + (match.timestamp || '00h00m00s')">
                 <v-btn icon><v-icon>mdi-youtube</v-icon></v-btn>
@@ -320,10 +320,10 @@ export default {
             this.video.title = response.body.title
           }
         })
-        .catch((error) => {
+        .catch((response) => {
           this.step = 1
           this.loading = false
-          this.errorMessage = error.bodyText + ' (' + this.link + ')'
+          this.errorMessage = response.bodyText + ' (' + this.link + ')'
           this.error = true
         })
     },
@@ -334,20 +334,20 @@ export default {
         if (response.ok && response.body.length > 0) {
           this.video.version = { name: response.body[0].version }
           this.matches = response.body.map((match) => {
-            let editableMatch = {
-              timestamp: match.timestamp
+            return {
+              timestamp: match.timestamp,
+              players: [{
+                name: match.players[0].name,
+                characters: match.players[0].characters.map((character) => {
+                  return character.id
+                })
+              }, {
+                name: match.players[1].name,
+                characters: match.players[1].characters.map((character) => {
+                  return character.id
+                })
+              }]
             }
-
-            for (let i = 0; i < 2; i++) {
-              editableMatch['p' + (i + 1)] = match.players[i].name
-              let characters = []
-              match.players[i].characters.forEach((character) => {
-                characters.push(character.id)
-              })
-              editableMatch['p' + (i + 1) + 'chars'] = characters
-            }
-
-            return editableMatch
           })
         }
       })
@@ -369,31 +369,62 @@ export default {
     },
     addMatch: function () {
       let newMatch = {
-        p1: '',
-        p1chars: [],
-        p2: '',
-        p2chars: []
+        players: [{characters: []}, {characters: []}]
       }
       this.matches.push(newMatch)
     },
     swapPlayers: function (match) {
-      let p1 = match.p1
-      let p1chars = match.p1chars
-      match.p1 = match.p2
-      match.p1chars = match.p2chars
-      match.p2 = p1
-      match.p2chars = p1chars
+      match.players.push(match.players.shift())
     },
     duplicateMatch: function (match) {
       let index = this.matches.indexOf(match)
-      let newMatch = Object.assign({}, match)
+      let newMatch = {
+        timestamp: match.timestamp,
+        players: [{
+          name: match.players[0].name,
+          characters: match.players[0].characters.slice()
+        }, {
+          name: match.players[1].name,
+          characters: match.players[1].characters.slice()
+        }]
+      }
       this.matches.splice(index, 0, newMatch)
     },
     deleteMatch: function (match) {
       this.matches.splice(this.matches.indexOf(match), 1)
     },
     save: function () {
-      // TODO: implement
+      let matches = this.matches.map((match) => {
+        match.video = this.video.id
+        match.title = this.video.title
+        match.channel = this.video.channel
+        match.date = this.video.date
+        match.version = this.video.version
+        return match
+      })
+      this.loading = true
+      this.$api.saveMatches(matches)
+        .then((response) => {
+          this.loading = false
+          if (response.ok) {
+            this.successMessage = 'Matches saved'
+            this.success = true
+            this.errorMessage = ''
+            this.error = false
+          } else {
+            this.errorMessage = response.bodyText
+            this.error = true
+            this.successMessage = ''
+            this.success = false
+          }
+        })
+        .catch((response) => {
+          this.loading = false
+          this.errorMessage = response.bodyText
+          this.error = true
+          this.successMessage = ''
+          this.success = false
+        })
     },
     pickCharacterIcon: function () {
       this.$refs.characterIcon.click()

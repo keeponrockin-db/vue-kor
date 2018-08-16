@@ -186,6 +186,7 @@ api.put('/matches', (request, response) => {
       let matches = request.body
       return ({client, matches})
     })
+    .then(({client, matches}) => addMirrorFields(client, matches))
     .then(({client, matches}) => {
       let version = matches[0].version
       return client.db()
@@ -204,6 +205,12 @@ api.put('/matches', (request, response) => {
     .then(({client, matches}) => {
       return client.db()
         .collection('matches')
+        .deleteMany({ video: matches[0].video })
+        .then(() => ({client, matches}))
+    })
+    .then(({client, matches}) => {
+      return client.db()
+        .collection('matches')
         .insert(matches)
         .then((results) => ({client, results}))
     })
@@ -213,6 +220,21 @@ api.put('/matches', (request, response) => {
     })
     .catch(error => response.status(400).send(error.toString()))
 })
+
+function addMirrorFields (client, matches) {
+  matches = matches.map((match) => {
+    match.players[0].characters.forEach((character) => {
+      if (match.players[1].characters.indexOf(character) >= 0) {
+        if (!match.mirror) {
+          match.mirror = []
+        }
+        match.mirror.push(character)
+      }
+    })
+    return match
+  })
+  return ({client, matches})
+}
 
 function fillPlayerIds (client, matches) {
   let foundPlayers = []
@@ -241,7 +263,6 @@ function fillPlayerIds (client, matches) {
           }
         }
       }
-
       return ({newPlayers, playerIds})
     })
     .then(({newPlayers, playerIds}) => {
@@ -256,7 +277,6 @@ function fillPlayerIds (client, matches) {
           )
           .then(() => {
             query = { name: { $in: newPlayers } }
-
             return client.db()
               .collection('players')
               .find(query)
@@ -290,7 +310,7 @@ api.get('/versions', (request, response) => {
       .collection('versions')
       .find()
       .toArray()
-      .then(versions => ({client, versions}))
+      .then(versions => ({client, versions: versions.map((version) => { return version.name })}))
     )
     .then(({client, versions}) => {
       client.close()

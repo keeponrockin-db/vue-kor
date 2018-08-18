@@ -1,46 +1,48 @@
 <template>
   <div>
-    <v-card>
-      <v-card-text>
-        <v-layout v-for="i in [1, 2]" :key="i">
-          <v-menu transition="slide-y-transition" v-for="j in $config.teamSize" :key="j">
-            <v-btn slot="activator" icon>
-              <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
-                mdi-account-outline
-              </v-icon>
-              <v-avatar class="mr-1" size="36px" v-if="selectedCharacters[i - 1][j - 1]">
-                <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>
+    <v-layout column class="pa-3">
+      <v-layout v-for="i in [1, 2]" :key="i">
+        <v-menu transition="slide-y-transition" v-for="j in $config.teamSize" :key="j">
+          <v-btn class="ma-1" fab small slot="activator" icon>
+            <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
+              mdi-account-outline
+            </v-icon>
+            <v-avatar size="40px" v-if="selectedCharacters[i - 1][j - 1]">
+              <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>
+            </v-avatar>
+          </v-btn>
+          <v-list>
+            <v-list-tile @click="selectCharacter(i, j, undefined)">
+              <v-avatar class="mr-1" size="36px"><v-icon>mdi-account-outline</v-icon></v-avatar>
+              Any Character
+            </v-list-tile>
+            <v-list-tile v-for="character in characters" :key="character.id" @click="selectCharacter(i, j, character.id)">
+              <v-avatar class="mr-1" size="36px">
+                <img :src="character.iconUrl" :alt="character.name">
               </v-avatar>
-            </v-btn>
-            <v-list v-for="character in characters" :key="character.id">
-              <v-list-tile @click="selectCharacter(i, j, character.id)">
-                <v-avatar class="mr-1" size="36px">
-                  <img :src="character.iconUrl" :alt="character.name">
-                </v-avatar>
-                {{ character.name }}
-              </v-list-tile>
-            </v-list>
-          </v-menu>
-          <v-autocomplete clearable :label="'Player ' + i" :items="players" v-model="selectedPlayers[i - 1]"/>
-        </v-layout>
-        <v-layout column v-show="expandSearch">
-          <v-select clearable label="Versions" multiple :items="versions" item-text="name"/>
-          <v-select clearable label="Channels" multiple/>
-          <v-layout align-center>
-            <v-text-field clearable label="Title"/>
-            <v-btn icon>
-              <v-icon>search</v-icon>
-            </v-btn>
-          </v-layout>
-        </v-layout>
-        <v-layout justify-center>
-          <v-btn icon @click="expandSearch = !expandSearch">
-            <v-icon v-if="!expandSearch">keyboard_arrow_down</v-icon>
-            <v-icon v-if="expandSearch">keyboard_arrow_up</v-icon>
+              {{ character.name }}
+            </v-list-tile>
+          </v-list>
+        </v-menu>
+        <v-autocomplete clearable :label="`Player ${i}`" :items="players" v-model="selectedPlayers[i - 1]"/>
+      </v-layout>
+      <v-layout column v-show="expandSearch">
+        <v-select clearable label="Versions" multiple :items="versions" item-text="name"/>
+        <v-select clearable label="Channels" multiple/>
+        <v-layout align-center>
+          <v-text-field clearable label="Title"/>
+          <v-btn icon>
+            <v-icon>search</v-icon>
           </v-btn>
         </v-layout>
-      </v-card-text>
-    </v-card>
+      </v-layout>
+      <v-layout justify-center>
+        <v-btn icon @click="expandSearch = !expandSearch">
+          <v-icon v-if="!expandSearch">keyboard_arrow_down</v-icon>
+          <v-icon v-if="expandSearch">keyboard_arrow_up</v-icon>
+        </v-btn>
+      </v-layout>
+    </v-layout>
     <v-alert dismissible v-model="error" type="error">
       {{ this.errorMessage }}
     </v-alert>
@@ -55,16 +57,16 @@
       v-bind="match"
       :consecutiveMatch="(i > 0) && (matches[i - 1].video === match.video)"
     />
-    <v-footer class="mt-2">
+    <v-layout class="mt-3">
       <v-spacer/>
       <v-pagination
         v-model="page"
-        :length="resultsCount"
+        :length="Math.floor(resultsCount / this.$config.itemsPerPage) + 1"
         :total-visible="7"
         circle
       />
       <v-spacer/>
-    </v-footer>
+    </v-layout>
   </div>
 </template>
 
@@ -91,22 +93,24 @@ export default {
     selectedCharacters: [[], []],
     players: [],
     selectedPlayers: [],
-    versions: []
+    versions: [],
+    channels: []
   }),
   created: function () {
     this.getMatches(this.query)
     this.loadCharacters()
     this.loadPlayers()
     this.loadVersions()
+    this.loadChannels()
   },
   watch: {
     selectedPlayers: function (player) {
       let query = Object.assign({}, this.query)
       for (let i = 0; i < 2; i++) {
         if (player[i]) {
-          query['p' + (i + 1)] = player[i]
+          query[`p${i + 1}`] = player[i]
         } else {
-          delete query['p' + (i + 1)]
+          delete query[`p${i + 1}`]
         }
       }
       this.$router.push({ path: '/', query: query })
@@ -150,7 +154,12 @@ export default {
     },
     loadVersions: function () {
       this.$api.getVersions().then(response => {
-        this.versions = response.body
+        this.versions = (response.body).map((version) => version.name)
+      })
+    },
+    loadChannels: function () {
+      this.$api.getChannels().then(response => {
+        this.channels = response.body
       })
     },
     getMatches: function (query) {
@@ -159,17 +168,18 @@ export default {
         this.loading = false
         if (response.ok) {
           this.error = false
-          this.matches = response.body
+          this.matches = response.body.matches
+          this.resultsCount = response.body.count
         } else {
           this.error = true
-          this.errorMessage = response.status + ': ' + response.statusText
+          this.errorMessage = `${response.status}: ${response.statusText}`
         }
       })
     },
     updateSelectedCharacters: function () {
       for (let i = 0; i < 2; i++) {
-        if (this.query['p' + (i + 1) + 'chars']) {
-          let queryCharacters = this.query['p' + (i + 1) + 'chars'].split(',')
+        if (this.query[`p${i + 1}chars`]) {
+          let queryCharacters = this.query[`p${i + 1}chars`].split(',')
           for (let j = 0; j < this.$config.teamSize; j++) {
             this.selectedCharacters[i][j] = this.characters[queryCharacters[j]]
           }
@@ -180,21 +190,21 @@ export default {
     },
     selectCharacter: function (playerNumber, characterPosition, characterId) {
       let characterQuery = ''
-      if (this.query['p' + playerNumber + 'chars']) {
-        let characters = this.query['p' + playerNumber + 'chars'].split(',')
+      if (this.query[`p${playerNumber}chars`]) {
+        let characters = this.query[`p${playerNumber}chars`].split(',')
         characters[characterPosition - 1] = characterId
-        characterQuery = characters.join(',')
+        characterQuery = characters.filter((character) => character).join(',')
       } else {
         characterQuery = characterId
       }
       let query = Object.assign({}, this.query)
-      query['p' + playerNumber + 'chars'] = characterQuery
+      query[`p${playerNumber}chars`] = characterQuery
       this.$router.push({ path: '/', query: query })
     },
     updateSelectedPlayers: function () {
       for (let i = 0; i < 2; i++) {
-        if (this.query['p' + (i + 1)]) {
-          this.selectedPlayers[i] = this.query['p' + (i + 1)]
+        if (this.query[`p${i + 1}`]) {
+          this.selectedPlayers[i] = this.query[`p${i + 1}`]
         } else {
           this.selectedPlayers[i] = undefined
         }

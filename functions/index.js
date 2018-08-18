@@ -31,37 +31,41 @@ api.get('/matches', (request, response) => {
           .collection('players')
           .find(query)
           .toArray()
-          .then(players => ({client, players}))
+          .then(players => ({ client, players }))
       } else {
         let players = []
-        return ({client, players})
+        return ({ client, players })
       }
     })
-    .then(({client, players}) => {
+    .then(({ client, players }) => {
       let query = formMatchQuery(request.query, players)
       let sort = defaultSort
       let skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
       let limit = itemsPerPage
 
-      return ({client, query, sort, skip, limit})
+      return ({ client, query, sort, skip, limit })
     })
-    .then(({client, query, sort, skip, limit}) => client.db()
+    .then(({ client, query, sort, skip, limit }) => client.db()
       .collection('matches')
       .find(query)
       .sort(sort)
       .skip(skip)
       .limit(limit)
       .toArray()
-      .then(matches => ({client, matches}))
+      .then(matches => ({client, matches, query}))
     )
-    .then(({client, matches}) => deserializeMatches(client, matches)
-      .then((matches) => {
-        return ({client, matches})
-      })
+    .then(({ client, matches, query }) => deserializeMatches(client, matches)
+      .then((matches) => ({ client, matches, query }))
     )
-    .then(({client, matches}) => {
+    .then(({ client, matches, query }) => client.db()
+      .collection('matches')
+      .find(query)
+      .count()
+      .then((count) => ({ client, matches, count }))
+    )
+    .then(({ client, matches, count }) => {
       client.close()
-      response.status(200).json(matches)
+      response.status(200).json({ matches: matches, count: count })
     })
     .catch(error => response.status(400).send(error.toString()))
 })
@@ -256,9 +260,12 @@ function fillPlayerIds (client, matches) {
       let playerIds = {}
       let newPlayers = foundPlayers
       for (let i = newPlayers.length - 1; i >= 0; i--) {
+        // go backwards so you don't break index when modifying the array
         for (let j = 0; j < players.length; j++) {
           if (players[j].aliases.includes(newPlayers[i])) {
-            playerIds[newPlayers.pop()] = players[j]._id.toString()
+            // starting with all related players, remove known ones and remember their ids
+            playerIds[newPlayers[i]] = players[j]._id.toString()
+            newPlayers.splice(i, 1)
             break
           }
         }
@@ -300,60 +307,18 @@ function fillPlayerIds (client, matches) {
         })
       })
 
-      return ({client, matches})
+      return ({ client, matches })
     })
 }
-
-api.get('/versions', (request, response) => {
-  return connectMongoDB()
-    .then(client => client.db()
-      .collection('versions')
-      .find()
-      .toArray()
-      .then(versions => ({client, versions: versions.map((version) => { return version.name })}))
-    )
-    .then(({client, versions}) => {
-      client.close()
-      return versions
-    })
-    .then(versions => response.json(versions))
-    .catch(error => response.status(400).send(error.toString()))
-})
-
-api.put('/version', (request, response) => {
-  return connectMongoDB()
-    .then(client => {
-      let version = {
-        name: request.body.name
-      }
-      let id = request.body.id
-      return ({client, version, id})
-    })
-    .then(({client, version, id}) => {
-      if (id) {
-        // fix up matches
-      }
-      return ({client, version, id})
-    })
-    .then(({client, version, id}) => client.db()
-      .collection('versions')
-      .updateOne({id: id}, {$set: version}, {upsert: true})
-      .then((results) => ({client, results}))
-    )
-    .then(({client, results}) => {
-      client.close()
-      response.status(200).json(results)
-    })
-    .catch(error => response.status(400).send(error.toString()))
-})
 
 api.get('/characters', (request, response) => {
   return connectMongoDB()
     .then(client => client.db()
       .collection('characters')
       .find()
+      .sort({ name: 1 })
       .toArray()
-      .then(characters => ({client, characters}))
+      .then(characters => ({ client, characters }))
     )
     .then(({client, characters}) => {
       client.close()
@@ -405,6 +370,62 @@ api.get('/players', (request, response) => {
       return players
     })
     .then(players => response.json(players))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.get('/versions', (request, response) => {
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('versions')
+      .find()
+      .toArray()
+      .then(versions => ({ client, versions }))
+    )
+    .then(({client, versions}) => {
+      client.close()
+      return versions
+    })
+    .then(versions => response.json(versions))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.put('/version', (request, response) => {
+  return connectMongoDB()
+    .then(client => {
+      let version = request.body
+      return ({ client, version })
+    })
+    .then(({ client, version }) => {
+      if (version._id) {
+        // fix up matches
+      }
+      return ({ client, version })
+    })
+    .then(({ client, version }) => client.db()
+      .collection('versions')
+      .updateOne({ _id: version._id }, { $set: version }, { upsert: true })
+      .then((results) => ({client, results}))
+    )
+    .then(({client, results}) => {
+      client.close()
+      response.status(200).json(results)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.get('/channels', (request, response) => {
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('channels')
+      .find()
+      .toArray()
+      .then(channels => ({ client, channels }))
+    )
+    .then(({client, channels}) => {
+      client.close()
+      return channels
+    })
+    .then(channels => response.json(channels))
     .catch(error => response.status(400).send(error.toString()))
 })
 

@@ -17,14 +17,6 @@ let apiMethods = {
     method: 'PUT',
     url: uri + 'matches'
   },
-  getVersions: {
-    method: 'GET',
-    url: uri + 'versions'
-  },
-  saveVersion: {
-    method: 'PUT',
-    url: uri + 'version'
-  },
   getCharacters: {
     method: 'GET',
     url: uri + 'characters'
@@ -36,6 +28,18 @@ let apiMethods = {
   getPlayers: {
     method: 'GET',
     url: uri + 'players'
+  },
+  getVersions: {
+    method: 'GET',
+    url: uri + 'versions'
+  },
+  saveVersion: {
+    method: 'PUT',
+    url: uri + 'version'
+  },
+  getChannels: {
+    method: 'GET',
+    url: uri + 'channels'
   },
   getYoutubeData: {
     method: 'GET',

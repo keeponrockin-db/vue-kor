@@ -17,17 +17,13 @@
           {{ this.successMessage }}
         </v-alert>
         <v-stepper-content step="1">
-          <v-card>
-            <v-card-text>
-              <v-text-field
-                prepend-icon="mdi-youtube"
-                label="Link"
-                hint="https://www.youtube.com/watch?v=***********"
-                :rules="[validateYoutubeURL]"
-                v-model="link"
-              />
-            </v-card-text>
-          </v-card>
+          <v-text-field label="Link"
+            clearable
+            prepend-icon="mdi-youtube"
+            hint="https://www.youtube.com/watch?v=***********"
+            :rules="[validateYoutubeURL]"
+            v-model="link"
+          />
         </v-stepper-content>
         <v-stepper-content step="2">
           <v-layout column v-show="!loading && !error">
@@ -46,54 +42,70 @@
           </v-btn>
         </v-stepper-content>
         <v-stepper-content step="3">
-          <v-text-field readonly label="Title" v-model="video.title"/>
-          <v-text-field readonly label="Channel" v-model="video.channel.name"/>
-          <v-text-field prepend-icon="event" readonly label="Date" v-model="video.date"/>
-          <v-textarea label="Description" v-model="manualEntry"/>
+          <v-text-field label="Title" readonly v-model="video.title"/>
+          <v-text-field label="Channel" readonly v-model="video.channel.name"/>
+          <v-text-field label="Date" prepend-icon="event" readonly v-model="video.date"/>
+          <v-textarea label="Description" clearable v-model="manualEntry"/>
           <v-btn @click="parse">Parse</v-btn>
-          <v-select label="Version" :items="versions" v-model="video.version"/>
-          <v-card v-for="(match, i) in matches" :key="i">
+          <v-btn @click="generate">Generate</v-btn>
+          <v-select label="Version" :items="versions.map((version) => version.name)" v-model="video.version"/>
+          <v-layout v-for="(match, i) in matches" :key="i">
             <v-layout fill-height align-center>
-              <v-text-field label="Timestamp"
-                class="mr-1"
-                hint="**h**m**s"
-                :rules="[validateTimestamp]"
-                v-model="match.timestamp"
-              />
-              <v-layout row v-for="j in [1, 2]" :key="j" :reverse="j === 1">
-                <v-menu transition="slide-y-transition" v-for="k in $config.teamSize" :key="k">
-                  <v-btn slot="activator" icon>
-                    <v-icon v-if="!match.players[j - 1].characters[k - 1]">
-                      mdi-account-outline
-                    </v-icon>
-                    <v-avatar class="mr-1" size="36px" v-if="match.players[j - 1].characters[k - 1]">
-                      <img :src="characters[match.players[j - 1].characters[k - 1]].iconUrl"/>
-                    </v-avatar>
-                  </v-btn>
-                  <v-list v-for="character in characters" :key="character.id">
-                    <v-list-tile @click="match.players[j - 1].characters[k - 1] = character">
-                      <v-avatar size="36px">
-                        <img :src="character.iconUrl" :alt="character.name">
-                      </v-avatar>
-                      {{ character.name }}
-                    </v-list-tile>
-                  </v-list>
-                </v-menu>
-                <v-combobox :label="'Player ' + j" :items="aliases" v-model="match.players[j - 1].name"/>
-              </v-layout>
-              <a target="_blank" :href="'https://www.youtube.com/watch?v=' + video.id + '&t=' + (match.timestamp || '00h00m00s')">
-                <v-btn icon><v-icon>mdi-youtube</v-icon></v-btn>
-              </a>
-              <v-btn icon @click="swapPlayers(match)"><v-icon>swap_horiz</v-icon></v-btn>
-              <v-btn icon @click="duplicateMatch(match)"><v-icon>mdi-content-duplicate</v-icon></v-btn>
-              <v-btn icon @click="deleteMatch(match)"><v-icon>delete</v-icon></v-btn>
+              <v-flex xs2>
+                <v-text-field label="Timestamp"
+                  class="mr-1"
+                  hint="**h**m**s"
+                  :rules="[validateTimestamp]"
+                  v-model="match.timestamp"
+                />
+              </v-flex>
+              <v-flex xs9>
+                <v-layout row>
+                  <v-layout row v-for="j in [1, 2]" :key="j" :reverse="j === 1">
+                    <v-menu transition="slide-y-transition" v-for="k in $config.teamSize" :key="k">
+                      <v-btn class="ma-1" slot="activator" icon>
+                        <v-icon v-if="!match.players[j - 1].characters[k - 1]">
+                          mdi-account-outline
+                        </v-icon>
+                        <v-avatar class="mr-1" size="36px" v-if="match.players[j - 1].characters[k - 1]">
+                          <img :src="characters[match.players[j - 1].characters[k - 1]].iconUrl"/>
+                        </v-avatar>
+                      </v-btn>
+                      <v-list v-for="character in characters" :key="character.id">
+                        <v-list-tile @click="selectCharacter(match, (j - 1), (k - 1), character.id)">
+                          <v-avatar size="36px">
+                            <img :src="character.iconUrl" :alt="character.name">
+                          </v-avatar>
+                          {{ character.name }}
+                        </v-list-tile>
+                      </v-list>
+                    </v-menu>
+                    <v-combobox :label="`Player ${j}`"
+                      clearable
+                      :items="aliases"
+                      v-model="match.players[j - 1].name"
+                    />
+                  </v-layout>
+                </v-layout>
+              </v-flex>
+              <v-flex class="text-xs-right" xs2>
+                <a :href="`https://www.youtube.com/watch?v=${video.id}&t=${match.timestamp || '00h00m00s'}`"
+                  class="ma-0"
+                  target="_blank"
+                >
+                  <v-btn icon class="ma-0"><v-icon>mdi-youtube</v-icon></v-btn>
+                </a>
+                <v-btn icon class="ma-0" @click="swapPlayers(match)"><v-icon>swap_horiz</v-icon></v-btn>
+                <v-btn icon class="ma-0" @click="duplicateMatch(match)"><v-icon>mdi-content-duplicate</v-icon></v-btn>
+                <v-btn icon class="ma-0" @click="deleteMatch(match)"><v-icon>delete</v-icon></v-btn>
+              </v-flex>
             </v-layout>
-          </v-card>
+          </v-layout>
           <v-btn @click="startOver">
             <v-icon left>undo</v-icon>
             Start over
           </v-btn>
-          <v-btn @click="addMatch">
+          <v-btn v-if="!loading" @click="addMatch">
             <v-icon left>playlist_add</v-icon>
             Add Match
           </v-btn>
@@ -107,7 +119,7 @@
     <v-layout>
       <v-spacer/>
       <v-dialog v-model="admin" fullscreen hide-overlay transition="dialog-bottom-transition">
-        <v-btn slot="activator">
+        <v-btn dark slot="activator">
           <v-icon left>settings</v-icon>
           Admin Settings
         </v-btn>
@@ -142,8 +154,17 @@
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout row align-center>
-                <v-text-field label="Name" v-model="editVersion.name"/>
-                <v-btn icon><v-icon>save</v-icon></v-btn>
+                <v-text-field label="Name" class="mr-3" clearable v-model="editVersion.name"/>
+                <v-select label="Merge with Version"
+                  clearable
+                  :items="versions"
+                  item-text="name"
+                  :item-value="(version) => ({
+                    id: version._id,
+                    name: version.name
+                  })"
+                />
+                <v-btn icon @click="saveVersion"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3 class="mb-2">Characters</h3>
               <v-layout row align-center>
@@ -174,8 +195,8 @@
                     <img :src="editCharacter.iconUrl">
                   </v-avatar>
                 </v-btn>
-                <v-text-field label="Name" class="mr-1" v-model="editCharacter.name"/>
-                <v-text-field label="Id" v-model="editCharacter.newId"/>
+                <v-text-field label="Name" class="mr-3" clearable v-model="editCharacter.name"/>
+                <v-text-field label="Id" clearable v-model="editCharacter.newId"/>
                 <v-btn icon @click="saveCharacter"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3>Players</h3>
@@ -184,13 +205,13 @@
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout row align-center>
-                <v-select label="Edit Alias" class="mr-1"/>
-                <v-text-field label="New Alias"/>
+                <v-select label="Edit Alias" class="mr-3" clearable/>
+                <v-text-field label="New Alias" clearable/>
                 <v-btn icon><v-icon>save</v-icon></v-btn>
                 <v-btn icon><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout row align-center>
-                <v-autocomplete label="Merge with Player" :items="aliases"/>
+                <v-autocomplete label="Merge with Player" clearable :items="aliases"/>
                 <v-btn icon><v-icon>save</v-icon></v-btn>
               </v-layout>
             </v-form>
@@ -251,7 +272,7 @@ export default {
     this.loadPlayers()
     this.loadVersions()
     if (this.v) {
-      this.link = 'https://www.youtube.com/watch?v=' + this.v
+      this.link = `https://www.youtube.com/watch?v=${this.v}`
       this.validateYoutubeURL(this.link)
     }
   },
@@ -262,6 +283,12 @@ export default {
       } else if (step === 3) {
         this.manualEntry = this.video.description
         this.loadMatches()
+      }
+    },
+    editCharacter: function (character) {
+      this.newCharacterIcon = {
+        filename: '',
+        file: ''
       }
     }
   },
@@ -323,7 +350,7 @@ export default {
         .catch((response) => {
           this.step = 1
           this.loading = false
-          this.errorMessage = response.bodyText + ' (' + this.link + ')'
+          this.errorMessage = `${response.bodyText} (${this.link})`
           this.error = true
         })
     },
@@ -331,9 +358,9 @@ export default {
       this.loading = true
       this.$api.getMatches({ v: this.video.id }).then((response) => {
         this.loading = false
-        if (response.ok && response.body.length > 0) {
-          this.video.version = { name: response.body[0].version }
-          this.matches = response.body.map((match) => {
+        if (response.ok && response.body.matches.length > 0) {
+          this.video.version = response.body.matches[0].version
+          this.matches = response.body.matches.map((match) => {
             return {
               timestamp: match.timestamp,
               players: [{
@@ -367,9 +394,33 @@ export default {
     parse: function () {
       // TODO: implement
     },
+    generate: function () {
+      let newDescription = ''
+      this.matches.forEach((match) => {
+        let characters = []
+        match.players.forEach((player) => {
+          characters.push(player.characters.join(', '))
+        })
+        newDescription +=
+          `${match.timestamp} ${match.players[0].name} (${characters[0]}) vs` +
+          ` ${match.players[1].name} (${characters[1]})\n`
+      })
+      this.manualEntry = newDescription
+    },
+    selectCharacter: function (match, playerIndex, characterIndex, character) {
+      match.players[playerIndex].characters.splice(characterIndex, 1, character)
+    },
     addMatch: function () {
+      let defaultCharacters = []
+      for (let i = 0; i < this.$config.teamSize; i++) {
+        if (i < Object.keys(this.characters).size) {
+          defaultCharacters.push(Object.keys(this.characters)[i])
+        } else {
+          defaultCharacters.push(Object.keys(this.characters)[0])
+        }
+      }
       let newMatch = {
-        players: [{characters: []}, {characters: []}]
+        players: [{characters: defaultCharacters.slice()}, {characters: defaultCharacters.slice()}]
       }
       this.matches.push(newMatch)
     },
@@ -464,15 +515,21 @@ export default {
               this.adminSuccess = true
               this.adminErrorMessage = ''
               this.adminError = false
-              this.matches = response.body
               this.loadCharacters()
             } else {
+              this.adminErrorMessage = response.bodyText
+              this.adminError = true
               this.adminSuccessMessage = ''
               this.adminSuccess = false
-              this.adminErrorMessage = response.status + ': ' + response.statusText
-              this.adminError = true
             }
           })
+        })
+        .catch((response) => {
+          this.adminLoading = false
+          this.adminErrorMessage = response.bodyText
+          this.adminError = true
+          this.adminSuccessMessage = ''
+          this.adminSuccess = false
         })
     },
     uploadCharacterIcon: function () {
@@ -486,12 +543,38 @@ export default {
 
       let storage = this.$firebase.storage()
       let storageRef = storage.ref()
-      let iconRef = storageRef.child('characterIcons').child(this.editCharacter.newId + '.' + fileExtension)
+      let iconRef = storageRef.child('characterIcons').child(`${this.editCharacter.newId}.${fileExtension}`)
       return iconRef.put(this.newCharacterIcon.file)
         .then((snapshot) => {
           return snapshot.ref.getDownloadURL().then((url) => {
             return url
           })
+        })
+    },
+    saveVersion: function () {
+      this.adminLoading = true
+      this.$api.saveVersion(this.editVersion)
+        .then(response => {
+          this.adminLoading = false
+          if (response.ok) {
+            this.adminSuccessMessage = 'Version saved'
+            this.adminSuccess = true
+            this.adminErrorMessage = ''
+            this.adminError = false
+            this.loadVersions()
+          } else {
+            this.adminErrorMessage = response.bodyText
+            this.adminError = true
+            this.adminSuccessMessage = ''
+            this.adminSuccess = false
+          }
+        })
+        .catch((response) => {
+          this.adminLoading = false
+          this.adminErrorMessage = response.bodyText
+          this.adminError = true
+          this.adminSuccessMessage = ''
+          this.adminSuccess = false
         })
     }
   }

@@ -27,8 +27,8 @@
         <v-autocomplete clearable :label="`Player ${i}`" :items="players" v-model="selectedPlayers[i - 1]"/>
       </v-layout>
       <v-layout column v-show="expandSearch">
-        <v-select clearable label="Versions" multiple :items="versions" item-text="name"/>
-        <v-select clearable label="Channels" multiple/>
+        <v-select clearable label="Versions" multiple :items="versions" item-text="name" v-model="selectedVersions"/>
+        <v-select clearable label="Channels" multiple :items="channels" item-text="name" item-value="id" v-model="selectedChannels"/>
         <v-layout align-center>
           <v-text-field clearable label="Title"/>
           <v-btn icon>
@@ -84,7 +84,7 @@ export default {
   data: () => ({
     expandSearch: false,
     page: 1,
-    resultsCount: 15,
+    resultsCount: -1,
     matches: [],
     loading: false,
     error: false,
@@ -94,7 +94,9 @@ export default {
     players: [],
     selectedPlayers: [],
     versions: [],
-    channels: []
+    selectedVersions: [],
+    channels: [],
+    selectedChannels: []
   }),
   created: function () {
     this.getMatches(this.query)
@@ -118,6 +120,16 @@ export default {
     '$route.query': function (query) {
       this.query = query
     },
+    selectedVersions: function(versions) {
+      let query = Object.assign({}, this.query)
+      query.versions = versions.filter((version) => version).join(',')
+      this.$router.push({ path: '/', query: query })
+    },
+    selectedChannels: function (channels) {
+      let query = Object.assign({}, this.query)
+      query.channels = channels.filter((channel) => channel).join(',')
+      this.$router.push({ path: '/', query: query })
+    },
     page: function (page) {
       let query = Object.assign({}, this.query)
       query.page = page
@@ -139,41 +151,6 @@ export default {
         })
         this.characters = characters
         this.updateSelectedCharacters()
-      })
-    },
-    loadPlayers: function () {
-      this.$api.getPlayers().then(response => {
-        response.body.forEach((player) => {
-          player.aliases.forEach((alias) => {
-            this.players.push(alias)
-          })
-        })
-        this.players.sort()
-        this.updateSelectedPlayers()
-      })
-    },
-    loadVersions: function () {
-      this.$api.getVersions().then(response => {
-        this.versions = (response.body).map((version) => version.name)
-      })
-    },
-    loadChannels: function () {
-      this.$api.getChannels().then(response => {
-        this.channels = response.body
-      })
-    },
-    getMatches: function (query) {
-      this.loading = true
-      return this.$api.getMatches(query).then(response => {
-        this.loading = false
-        if (response.ok) {
-          this.error = false
-          this.matches = response.body.matches
-          this.resultsCount = response.body.count
-        } else {
-          this.error = true
-          this.errorMessage = `${response.status}: ${response.statusText}`
-        }
       })
     },
     updateSelectedCharacters: function () {
@@ -201,6 +178,17 @@ export default {
       query[`p${playerNumber}chars`] = characterQuery
       this.$router.push({ path: '/', query: query })
     },
+    loadPlayers: function () {
+      this.$api.getPlayers().then(response => {
+        response.body.forEach((player) => {
+          player.aliases.forEach((alias) => {
+            this.players.push(alias)
+          })
+        })
+        this.players.sort()
+        this.updateSelectedPlayers()
+      })
+    },
     updateSelectedPlayers: function () {
       for (let i = 0; i < 2; i++) {
         if (this.query[`p${i + 1}`]) {
@@ -209,6 +197,36 @@ export default {
           this.selectedPlayers[i] = undefined
         }
       }
+    },
+    loadVersions: function () {
+      this.$api.getVersions().then(response => {
+        this.versions = (response.body).map((version) => version.name)
+      })
+    },
+    loadChannels: function () {
+      this.$api.getChannels().then(response => {
+        this.channels = response.body
+        this.updateSelectedChannels()
+      })
+    },
+    updateSelectedChannels: function () {
+      if (this.query.channels) {
+        this.selectedChannels = this.query.channels.split(',')
+      }
+    },
+    getMatches: function (query) {
+      this.loading = true
+      return this.$api.getMatches(query).then(response => {
+        this.loading = false
+        if (response.ok) {
+          this.error = false
+          this.matches = response.body.matches
+          this.resultsCount = response.body.count
+        } else {
+          this.error = true
+          this.errorMessage = `${response.status}: ${response.statusText}`
+        }
+      })
     }
   }
 }

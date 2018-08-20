@@ -42,7 +42,6 @@ api.get('/matches', (request, response) => {
       let sort = defaultSort
       let skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
       let limit = itemsPerPage
-
       return ({ client, query, sort, skip, limit })
     })
     .then(({ client, query, sort, skip, limit }) => client.db()
@@ -91,8 +90,8 @@ function formMatchQuery (query, players) {
     }
   }
 
-  if (query.version) { matchQuery.version = query.version.toUpperCase() }
-  if (query.channel) { matchQuery.channel = query.channel }
+  if (query.versions) { matchQuery.version = { $in: query.versions.split(',') } }
+  if (query.channels) { matchQuery['channel.id'] = { $in: query.channels.split(',') } }
 
   let playerNames = [query.p1, query.p2]
 
@@ -201,7 +200,7 @@ api.put('/matches', (request, response) => {
     .then(({client, matches}) => {
       let channel = matches[0].channel
       return client.db()
-        .collection('channel')
+        .collection('channels')
         .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
         .then(() => ({client, matches}))
     })

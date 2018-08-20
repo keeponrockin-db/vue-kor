@@ -22,6 +22,7 @@
       <v-divider/>
       <v-layout align-center>
         <v-flex xs1 class="mr-3 hidden-xs-only"/>
+        <div class="pr-2 hidden-sm-and-up"/>
         <v-layout :column="$vuetify.breakpoint.xsOnly">
           <v-flex xs6 v-for="(player, i) in players" :key=i>
             <v-layout row align-center :reverse="i === 0 && $vuetify.breakpoint.smAndUp">

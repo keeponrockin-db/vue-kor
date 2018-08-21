@@ -27,3 +27,5 @@ functions/\.env
 cloud-key\.json
 
 src/config\.js
+
+*.log

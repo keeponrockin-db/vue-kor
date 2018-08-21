@@ -192,6 +192,9 @@ api.put('/matches', (request, response) => {
     .then(({client, matches}) => addMirrorFields(client, matches))
     .then(({client, matches}) => {
       let version = matches[0].version
+      if (!version) {
+        throw new Error('A version was not selected')
+      }
       return client.db()
         .collection('versions')
         .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
@@ -243,6 +246,9 @@ function fillPlayerIds (client, matches) {
   let foundPlayers = []
   matches.forEach(match => {
     match.players.forEach((player) => {
+      if (!player.name) {
+        player.name = 'Unknown Player'
+      }
       if (!foundPlayers.includes(player.name)) {
         foundPlayers.push(player.name)
       }

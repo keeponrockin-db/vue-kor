@@ -30,7 +30,7 @@
               <div v-for="(character, j) in player.characters" :key=j>
                 <router-link :to="`?p${i + 1}chars=${character.id}`">
                   <v-avatar class="ma-1" size="36px">
-                    <img :src="character.iconUrl" :alt="character.name">
+                    <img :src="character.iconUrl" :alt="character.name" :title="character.name">
                   </v-avatar>
                 </router-link>
               </div>

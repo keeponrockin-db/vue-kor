@@ -14,7 +14,7 @@ const connectMongoDB = () => MongoClient.connect(process.env.MONGODB)
 const youtubeKey = process.env.YOUTUBEKEY
 const axios = require('axios')
 
-const itemsPerPage = 15
+const itemsPerPage = 20
 const defaultSort = {
   date: -1,
   title: 1,
@@ -189,6 +189,7 @@ api.put('/matches', (request, response) => {
       let matches = request.body
       return ({client, matches})
     })
+    .then(({client, matches}) => checkCharacters(client, matches))
     .then(({client, matches}) => addMirrorFields(client, matches))
     .then(({client, matches}) => {
       let version = matches[0].version
@@ -226,6 +227,26 @@ api.put('/matches', (request, response) => {
     })
     .catch(error => response.status(400).send(error.toString()))
 })
+
+function checkCharacters (client, matches) {
+  return client.db()
+    .collection('characters')
+    .find()
+    .toArray()
+    .then((characters) => {
+      let characterIds = characters.map((character) => character.id)
+      matches.forEach((match) => {
+        match.players.forEach((player) => {
+          player.characters.forEach((character) => {
+            if (characterIds.indexOf(character) < 0) {
+              throw new Error('One or more characters were not found')
+            }
+          })
+        })
+      })
+      return ({client, matches})
+    })
+}
 
 function addMirrorFields (client, matches) {
   matches = matches.map((match) => {
@@ -316,6 +337,16 @@ function fillPlayerIds (client, matches) {
     })
 }
 
+api.delete('/matches', (request, response) => {
+  // TODO: implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      response.status(200).json(request)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
 api.get('/characters', (request, response) => {
   return connectMongoDB()
     .then(client => client.db()
@@ -329,11 +360,11 @@ api.get('/characters', (request, response) => {
       client.close()
       return characters
     })
-    .then(characters => response.json(characters))
+    .then(characters => response.status(200).json(characters))
     .catch(error => response.status(400).send(error.toString()))
 })
 
-api.put('/character', (request, response) => {
+api.put('/characters', (request, response) => {
   return connectMongoDB()
     .then(client => {
       let character = {
@@ -346,7 +377,7 @@ api.put('/character', (request, response) => {
     })
     .then(({client, character, id}) => {
       if (id !== character.id) {
-        // fix up matches
+        // TODO: fix up matches
       }
       return ({client, character, id})
     })
@@ -358,6 +389,16 @@ api.put('/character', (request, response) => {
     .then(({client, results}) => {
       client.close()
       response.status(200).json(results)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.delete('/characters', (request, response) => {
+  // TODO: Implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      throw new Error('Not implemented yet')
     })
     .catch(error => response.status(400).send(error.toString()))
 })
@@ -374,7 +415,37 @@ api.get('/players', (request, response) => {
       client.close()
       return players
     })
-    .then(players => response.json(players))
+    .then(players => response.status(200).json(players))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.put('/players', (request, response) => {
+  // TODO: Implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      throw new Error('Not implemented yet')
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.delete('/players', (request, response) => {
+  // TODO: Implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      throw new Error('Not implemented yet')
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.post('/players/merge', (request, response) => {
+  // TODO: Implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      throw new Error('Not implemented yet')
+    })
     .catch(error => response.status(400).send(error.toString()))
 })
 
@@ -390,11 +461,11 @@ api.get('/versions', (request, response) => {
       client.close()
       return versions
     })
-    .then(versions => response.json(versions))
+    .then(versions => response.status(200).json(versions))
     .catch(error => response.status(400).send(error.toString()))
 })
 
-api.put('/version', (request, response) => {
+api.put('/versions', (request, response) => {
   return connectMongoDB()
     .then(client => {
       let version = request.body
@@ -402,7 +473,7 @@ api.put('/version', (request, response) => {
     })
     .then(({ client, version }) => {
       if (version._id) {
-        // fix up matches
+        // TODO: fix up matches
       }
       return ({ client, version })
     })
@@ -414,6 +485,16 @@ api.put('/version', (request, response) => {
     .then(({client, results}) => {
       client.close()
       response.status(200).json(results)
+    })
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.delete('/versions', (request, response) => {
+  // TODO: Implement this
+  return connectMongoDB()
+    .then(client => client.db())
+    .then(() => {
+      throw new Error('Not implemented yet')
     })
     .catch(error => response.status(400).send(error.toString()))
 })
@@ -430,17 +511,17 @@ api.get('/channels', (request, response) => {
       client.close()
       return channels
     })
-    .then(channels => response.json(channels))
+    .then(channels => response.status(200).json(channels))
     .catch(error => response.status(400).send(error.toString()))
 })
 
-api.get('/youtubeData', (request, response) => {
+api.get('/youtube-data', (request, response) => {
   let url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
     request.query.v + '&key=' + youtubeKey
   return axios.get(url)
     .then((youtube) => {
       if (youtube.data.items.length > 0) {
-        response.json({
+        response.status(200).json({
           id: request.query.v,
           title: youtube.data.items[0].snippet.title,
           date: youtube.data.items[0].snippet.publishedAt.split('T')[0],

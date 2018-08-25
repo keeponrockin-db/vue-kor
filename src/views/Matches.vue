@@ -1,8 +1,11 @@
 <template>
-  <div>
+  <div v-scroll="onScroll">
     <v-layout column class="pa-3">
       <v-layout v-for="i in [1, 2]" :key="i">
-        <v-menu transition="slide-y-transition" v-for="j in $config.teamSize" :key="j">
+        <v-menu v-for="j in $config.teamSize" :key="j"
+          max-height="400px"
+          transition="slide-y-transition"
+        >
           <v-btn class="ma-1" fab small slot="activator" icon>
             <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
               mdi-account-outline
@@ -43,10 +46,18 @@
         </v-btn>
       </v-layout>
     </v-layout>
-    <v-alert dismissible v-model="error" type="error">
+    <v-alert type="error"
+      dismissible
+      v-model="error"
+      transition="slide-x-transition"
+    >
       {{ this.errorMessage }}
     </v-alert>
-    <v-alert dismissible type="info" :value="!loading && matches.length === 0">
+    <v-alert type="info"
+      dismissible
+      :value="!loading && matches.length === 0"
+      transition="slide-x-transition"
+    >
       No matches were found
     </v-alert>
     <v-progress-linear indeterminate v-show="loading"/>
@@ -62,11 +73,21 @@
       <v-pagination
         v-model="page"
         :length="Math.floor(resultsCount / this.$config.itemsPerPage) + 1"
-        :total-visible="7"
+        :total-visible="$vuetify.breakpoint.smAndUp ? 7 : 5"
         circle
       />
       <v-spacer/>
     </v-layout>
+    <v-slide-y-reverse-transition>
+      <v-btn @click="$vuetify.goTo(0)"
+        small fab
+        fixed bottom right
+        color="primary"
+        v-show="showToTop"
+      >
+        <v-icon>keyboard_arrow_up</v-icon>
+      </v-btn>
+    </v-slide-y-reverse-transition>
   </div>
 </template>
 
@@ -96,7 +117,8 @@ export default {
     versions: [],
     selectedVersions: [],
     channels: [],
-    selectedChannels: []
+    selectedChannels: [],
+    showToTop: false
   }),
   created: function () {
     this.getMatches(this.query)
@@ -120,7 +142,7 @@ export default {
     '$route.query': function (query) {
       this.query = query
     },
-    selectedVersions: function(versions) {
+    selectedVersions: function (versions) {
       let query = Object.assign({}, this.query)
       query.versions = versions.filter((version) => version).join(',')
       this.$router.push({ path: '/', query: query })
@@ -144,7 +166,7 @@ export default {
   },
   methods: {
     loadCharacters: function () {
-      this.$api.getCharacters().then(response => {
+      this.$characters.get().then(response => {
         let characters = {}
         response.body.forEach((character) => {
           characters[character.id] = character
@@ -179,7 +201,7 @@ export default {
       this.$router.push({ path: '/', query: query })
     },
     loadPlayers: function () {
-      this.$api.getPlayers().then(response => {
+      this.$players.get().then(response => {
         response.body.forEach((player) => {
           player.aliases.forEach((alias) => {
             this.players.push(alias)
@@ -199,12 +221,12 @@ export default {
       }
     },
     loadVersions: function () {
-      this.$api.getVersions().then(response => {
+      this.$versions.get().then(response => {
         this.versions = (response.body).map((version) => version.name)
       })
     },
     loadChannels: function () {
-      this.$api.getChannels().then(response => {
+      this.$channels.get().then(response => {
         this.channels = response.body
         this.updateSelectedChannels()
       })
@@ -216,7 +238,7 @@ export default {
     },
     getMatches: function (query) {
       this.loading = true
-      return this.$api.getMatches(query).then(response => {
+      return this.$matches.get(query).then(response => {
         this.loading = false
         if (response.ok) {
           this.error = false
@@ -227,6 +249,9 @@ export default {
           this.errorMessage = `${response.status}: ${response.statusText}`
         }
       })
+    },
+    onScroll: function (event) {
+      this.showToTop = event.pageY >= 250
     }
   }
 }

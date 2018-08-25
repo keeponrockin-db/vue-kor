@@ -2,58 +2,70 @@ import Vue from 'vue'
 import VueResource from 'vue-resource'
 import firebase from 'firebase'
 import config from './../config'
+Vue.prototype.$config = config
 
 firebase.initializeApp(config.firebaseConfig)
-
 Vue.use(VueResource)
 
 let uri = config.cloudFn
-let apiMethods = {
-  getMatches: {
-    method: 'GET',
-    url: uri + 'matches'
-  },
-  saveMatches: {
-    method: 'PUT',
-    url: uri + 'matches'
-  },
-  getCharacters: {
-    method: 'GET',
-    url: uri + 'characters'
-  },
-  saveCharacter: {
-    method: 'PUT',
-    url: uri + 'character'
-  },
-  getPlayers: {
-    method: 'GET',
-    url: uri + 'players'
-  },
-  getVersions: {
-    method: 'GET',
-    url: uri + 'versions'
-  },
-  saveVersion: {
-    method: 'PUT',
-    url: uri + 'version'
-  },
-  getChannels: {
-    method: 'GET',
-    url: uri + 'channels'
-  },
-  getYoutubeData: {
-    method: 'GET',
-    url: uri + 'youtubeData'
-  }
+let matchesMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' },
+  delete: { method: 'DELETE' }
 }
-let api = Vue.resource(uri, {}, apiMethods)
+let matches = Vue.resource(`${uri}/matches/`, {}, matchesMethods)
 
-Vue.prototype.$config = config
+let charactersMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' },
+  delete: { method: 'DELETE' }
+}
+let characters = Vue.resource(`${uri}/characters/`, {}, charactersMethods)
+
+let playersMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' },
+  delete: { method: 'DELETE' },
+  merge: { method: 'POST', url: `${uri}/players/merge/` }
+}
+let players = Vue.resource(`${uri}/players/`, {}, playersMethods)
+
+let versionsMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' },
+  delete: { method: 'DELETE' }
+}
+let versions = Vue.resource(`${uri}/versions/`, {}, versionsMethods)
+
+let channelsMethods = {
+  get: { method: 'GET' }
+}
+let channels = Vue.resource(`${uri}/channels/`, {}, channelsMethods)
+
+let youtubeMethods = {
+  get: { method: 'GET' }
+}
+let youtubeData = Vue.resource(`${uri}/youtube-data/`, {}, youtubeMethods)
 
 Vue.use({
   install: () => {
-    Object.defineProperty(Vue.prototype, '$api', {
-      get () { return api }
+    Object.defineProperty(Vue.prototype, '$matches', {
+      get () { return matches }
+    })
+    Object.defineProperty(Vue.prototype, '$characters', {
+      get () { return characters }
+    })
+    Object.defineProperty(Vue.prototype, '$players', {
+      get () { return players }
+    })
+    Object.defineProperty(Vue.prototype, '$versions', {
+      get () { return versions }
+    })
+    Object.defineProperty(Vue.prototype, '$channels', {
+      get () { return channels }
+    })
+    Object.defineProperty(Vue.prototype, '$youtubeData', {
+      get () { return youtubeData }
     })
     Object.defineProperty(Vue.prototype, '$firebase', {
       get () { return firebase }

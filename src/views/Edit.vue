@@ -3,11 +3,13 @@
     <v-stepper v-model="step">
       <v-stepper-items>
         <v-stepper-header>
-          <v-stepper-step :complete="step > 1" step="1">Enter Link</v-stepper-step>
+          <v-stepper-step :complete="step > 1" step="1">Sign In</v-stepper-step>
           <v-divider/>
-          <v-stepper-step :complete="step > 2" step="2">Confirm Video Details</v-stepper-step>
+          <v-stepper-step :complete="step > 2" step="2">Enter Link</v-stepper-step>
           <v-divider/>
-          <v-stepper-step :complete="step > 3" step="3">Timestamps</v-stepper-step>
+          <v-stepper-step :complete="step > 3" step="3">Confirm Video Details</v-stepper-step>
+          <v-divider/>
+          <v-stepper-step :complete="step > 4" step="4">Timestamps</v-stepper-step>
         </v-stepper-header>
         <v-progress-linear indeterminate v-show="loading"/>
         <v-alert type="error"
@@ -25,6 +27,16 @@
           {{ this.successMessage }}
         </v-alert>
         <v-stepper-content step="1">
+          <v-layout row justify-center>
+            <v-btn @click="signIn('twitter')">
+              <v-icon left>mdi-twitter</v-icon> Sign in with Twitter
+            </v-btn>
+            <v-btn @click="signIn('google')">
+              <v-icon left>mdi-google</v-icon> Sign in with Google
+            </v-btn>
+          </v-layout>
+        </v-stepper-content>
+        <v-stepper-content step="2">
           <v-text-field label="Link"
             clearable
             prepend-icon="mdi-youtube"
@@ -33,7 +45,7 @@
             v-model="link"
           />
         </v-stepper-content>
-        <v-stepper-content step="2">
+        <v-stepper-content step="3">
           <v-layout column v-show="!loading && !error">
             <v-text-field readonly label="Title" v-model="video.title"/>
             <v-text-field readonly label="Channel" v-model="video.channel.name"/>
@@ -44,12 +56,12 @@
             <v-icon left>undo</v-icon>
             Start over
           </v-btn>
-          <v-btn v-if="!error && !loading" @click="step = 3">
+          <v-btn v-if="!error && !loading" @click="step = 4">
             <v-icon left>arrow_right_alt</v-icon>
             Next
           </v-btn>
         </v-stepper-content>
-        <v-stepper-content step="3">
+        <v-stepper-content step="4">
           <v-form ref="matchForm" v-model="validMatches">
             <v-text-field label="Title" readonly v-model="video.title"/>
             <v-text-field label="Channel" readonly v-model="video.channel.name"/>
@@ -329,16 +341,16 @@ export default {
     this.loadCharacters()
     this.loadPlayers()
     this.loadVersions()
-    if (this.v) {
+    if (this.$firebase.auth().currentUser && this.v) {
       this.link = `https://www.youtube.com/watch?v=${this.v}`
       this.validateYoutubeURL(this.link)
     }
   },
   watch: {
     step: function (step) {
-      if (step === 2) {
+      if (step === 3) {
         this.validateYoutubeID()
-      } else if (step === 3) {
+      } else if (step === 4) {
         this.manualEntry = this.video.description
         this.loadMatches()
       }
@@ -351,6 +363,18 @@ export default {
     }
   },
   methods: {
+    signIn: function (providerName) {
+      this.loading = true
+      this.$firebase.auth().signInWithPopup(this.$providers[providerName])
+        .then((response) => {
+          this.loading = false
+          this.step = 2
+        })
+        .catch((error) => {
+          this.loading = false
+          this.displayError(`${error.code}: ${error.message}`)
+        })
+    },
     loadCharacters: function () {
       this.$characters.get().then(response => {
         let characters = {}
@@ -381,7 +405,7 @@ export default {
       let matches = value.match(pattern)
       if (matches) {
         this.video.id = matches[1]
-        this.step = 2
+        this.step = 3
         return true
       } else {
         return 'https://www.youtube.com/watch?v=***********'
@@ -406,7 +430,7 @@ export default {
           }
         })
         .catch((response) => {
-          this.step = 1
+          this.step = 2
           this.loading = false
           this.displayError(`${response.bodyText} (${this.link})`)
         })
@@ -444,7 +468,7 @@ export default {
       return pattern.test(value) || '**h**m**s'
     },
     startOver: function () {
-      this.step = 1
+      this.step = 2
       this.link = ''
       this.title = ''
       this.channel = ''

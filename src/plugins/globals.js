@@ -5,6 +5,12 @@ import config from './../config'
 Vue.prototype.$config = config
 
 firebase.initializeApp(config.firebaseConfig)
+
+Vue.prototype.$providers = {
+  twitter: new firebase.auth.TwitterAuthProvider(),
+  google: new firebase.auth.GoogleAuthProvider()
+}
+
 Vue.use(VueResource)
 
 let uri = config.cloudFn

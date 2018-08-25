@@ -342,7 +342,7 @@ api.delete('/matches', (request, response) => {
   return connectMongoDB()
     .then(client => client.db())
     .then(() => {
-      response.status(200).json(request)
+      throw new Error('Not implemented yet')
     })
     .catch(error => response.status(400).send(error.toString()))
 })

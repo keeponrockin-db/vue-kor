@@ -120,7 +120,7 @@ export default {
     selectedChannels: [],
     showToTop: false
   }),
-  created: function () {
+  mounted: function () {
     this.getMatches(this.query)
     this.loadCharacters()
     this.loadPlayers()
@@ -251,7 +251,7 @@ export default {
       })
     },
     onScroll: function (event) {
-      this.showToTop = event.pageY >= 250
+      this.showToTop = event.currentTarget.scrollY >= 250
     }
   }
 }

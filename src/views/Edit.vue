@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-stepper v-model="step">
+    <v-stepper class="elevation-0" v-model="step">
       <v-stepper-items>
         <v-stepper-header>
           <v-stepper-step :complete="step > 1" step="1">Sign In</v-stepper-step>
@@ -27,7 +27,7 @@
           {{ this.successMessage }}
         </v-alert>
         <v-stepper-content step="1">
-          <v-layout row justify-center>
+          <v-layout column align-center>
             <v-btn @click="signIn('twitter')">
               <v-icon left>mdi-twitter</v-icon> Sign in with Twitter
             </v-btn>
@@ -92,16 +92,17 @@
               </v-flex>
               <v-flex xs9>
                 <v-layout :column="$vuetify.breakpoint.smAndDown">
-                  <v-layout row v-for="j in [1, 2]" :key="j" :reverse="j === 1 && $vuetify.breakpoint.mdAndUp">
+                  <v-layout row align-center v-for="j in [1, 2]" :key="j" :reverse="j === 1 && $vuetify.breakpoint.mdAndUp">
+                    <span class="ma-1" v-if="j === 1 && $vuetify.breakpoint.mdAndUp">vs</span>
                     <v-menu v-for="k in $config.teamSize" :key="k"
                       max-height="400px"
                       transition="slide-y-transition"
                     >
-                      <v-btn class="ma-1" slot="activator" icon>
+                      <v-btn class="ma-0" slot="activator" icon>
                         <v-icon v-if="!match.players[j - 1].characters[k - 1]">
                           mdi-account-outline
                         </v-icon>
-                        <v-avatar class="mr-1" size="36px" v-if="match.players[j - 1].characters[k - 1]">
+                        <v-avatar size="36px" v-if="match.players[j - 1].characters[k - 1]">
                           <img :src="characters[match.players[j - 1].characters[k - 1]] ?
                             characters[match.players[j - 1].characters[k - 1]].iconUrl : ''"
                             :alt="match.players[j - 1].characters[k - 1]"
@@ -161,8 +162,12 @@
     </v-stepper>
     <v-layout>
       <v-spacer/>
-      <v-dialog v-model="admin" fullscreen hide-overlay transition="dialog-bottom-transition">
-        <v-btn dark slot="activator">
+      <v-dialog v-model="admin"
+        fullscreen
+        hide-overlay
+        transition="dialog-bottom-transition"
+      >
+        <v-btn v-show="$firebase.auth().currentUser" dark slot="activator">
           <v-icon left>settings</v-icon>
           Admin Settings
         </v-btn>
@@ -337,13 +342,16 @@ export default {
     action: function () {},
     actionArgs: null
   }),
-  created: function () {
+  mounted: function () {
     this.loadCharacters()
     this.loadPlayers()
     this.loadVersions()
-    if (this.$firebase.auth().currentUser && this.v) {
-      this.link = `https://www.youtube.com/watch?v=${this.v}`
-      this.validateYoutubeURL(this.link)
+    if (this.$firebase.auth().currentUser) {
+      this.step = 2
+      if (this.v) {
+        this.link = `https://www.youtube.com/watch?v=${this.v}`
+        this.validateYoutubeURL(this.link)
+      }
     }
   },
   watch: {

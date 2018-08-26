@@ -1,7 +1,7 @@
 <template>
   <v-layout class="px-3">
     <v-layout column fill-height>
-      <v-divider/>
+      <v-divider class="ma-1"/>
       <v-layout align-center class="mb-1" v-if="!consecutiveMatch">
         <v-layout column>
           <v-flex>
@@ -19,22 +19,22 @@
           </router-link>
         </v-flex>
       </v-layout>
-      <v-divider/>
+      <v-divider class="ma-1"/>
       <v-layout align-center>
         <v-flex xs1 class="mr-3 hidden-xs-only"/>
         <div class="pr-2 hidden-sm-and-up"/>
         <v-layout :column="$vuetify.breakpoint.xsOnly">
           <v-flex xs6 v-for="(player, i) in players" :key=i>
             <v-layout row align-center :reverse="i === 0 && $vuetify.breakpoint.smAndUp">
-              <div v-if="i === 0 && $vuetify.breakpoint.smAndUp">vs</div>
+              <div class="ma-1" v-if="i === 0 && $vuetify.breakpoint.smAndUp">vs</div>
               <div v-for="(character, j) in player.characters" :key=j>
                 <router-link :to="`?p${i + 1}chars=${character.id}`">
-                  <v-avatar class="ma-1" size="36px">
+                  <v-avatar size="36px">
                     <img :src="character.iconUrl" :alt="character.name" :title="character.name">
                   </v-avatar>
                 </router-link>
               </div>
-              <div>
+              <div class="ma-1">
                 <router-link :to="`?p${i + 1}=${player.name}`">{{ player.name }}</router-link>
               </div>
             </v-layout>

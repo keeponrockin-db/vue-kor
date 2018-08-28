@@ -33,6 +33,6 @@ export default {
 <style scoped lang="scss">
 #router-view {
   width: 100%;
-  max-width: 1280px;
+  max-width: 960px;
 }
 </style>

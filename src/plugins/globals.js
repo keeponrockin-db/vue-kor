@@ -13,7 +13,7 @@ Vue.prototype.$providers = {
 
 Vue.use(VueResource)
 
-let uri = config.cloudFn
+let uri = config.localCloudFn
 let matchesMethods = {
   get: { method: 'GET' },
   save: { method: 'PUT' },
@@ -75,6 +75,9 @@ Vue.use({
     })
     Object.defineProperty(Vue.prototype, '$firebase', {
       get () { return firebase }
+    })
+    Object.defineProperty(Vue.prototype, '$httpInterceptors', {
+      get () { return Vue.http.interceptors }
     })
   }
 })

@@ -347,11 +347,17 @@ export default {
     this.loadPlayers()
     this.loadVersions()
     if (this.$firebase.auth().currentUser) {
-      this.step = 2
-      if (this.v) {
-        this.link = `https://www.youtube.com/watch?v=${this.v}`
-        this.validateYoutubeURL(this.link)
-      }
+      this.$firebase.auth().currentUser.getIdToken()
+        .then((token) => {
+          this.$httpInterceptors.push((request) => {
+            request.headers.set('Authorization', token)
+          })
+          this.step = 2
+          if (this.v) {
+            this.link = `https://www.youtube.com/watch?v=${this.v}`
+            this.validateYoutubeURL(this.link)
+          }
+        })
     }
   },
   watch: {
@@ -374,7 +380,11 @@ export default {
     signIn: function (providerName) {
       this.loading = true
       this.$firebase.auth().signInWithPopup(this.$providers[providerName])
-        .then((response) => {
+        .then(this.$firebase.auth().currentUser.getIdToken())
+        .then((token) => {
+          this.$httpInterceptors.push((request) => {
+            request.headers.set('Authorization', token)
+          })
           this.loading = false
           this.step = 2
         })
@@ -586,19 +596,19 @@ export default {
           return match
         })
         this.loading = true
-        this.$matches.save(matches)
-          .then((response) => {
-            this.loading = false
-            if (response.ok) {
-              this.displaySuccess('Matches saved')
-            } else {
+          this.$matches.save(matches)
+            .then((response) => {
+              this.loading = false
+              if (response.ok) {
+                this.displaySuccess('Matches saved')
+              } else {
+                this.displayError(response.bodyText)
+              }
+            })
+            .catch((response) => {
+              this.loading = false
               this.displayError(response.bodyText)
-            }
-          })
-          .catch((response) => {
-            this.loading = false
-            this.displayError(response.bodyText)
-          })
+            })
       }
     },
     deleteMatches: function () {

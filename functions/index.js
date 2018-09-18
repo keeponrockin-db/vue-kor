@@ -1,6 +1,8 @@
 require('dotenv').config()
 
 const functions = require('firebase-functions')
+const admin = require('firebase-admin')
+admin.initializeApp(functions.config().firebase)
 
 const express = require('express')
 const cors = require('cors')({ origin: true })
@@ -184,48 +186,54 @@ function deserializeMatches (client, matches) {
 }
 
 api.put('/matches', (request, response) => {
-  return connectMongoDB()
-    .then(client => {
-      let matches = request.body
-      return ({client, matches})
-    })
-    .then(({client, matches}) => checkCharacters(client, matches))
-    .then(({client, matches}) => addMirrorFields(client, matches))
-    .then(({client, matches}) => {
-      let version = matches[0].version
-      if (!version) {
-        throw new Error('A version was not selected')
-      }
-      return client.db()
-        .collection('versions')
-        .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
-        .then(() => ({client, matches}))
-    })
-    .then(({client, matches}) => {
-      let channel = matches[0].channel
-      return client.db()
-        .collection('channels')
-        .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
-        .then(() => ({client, matches}))
-    })
-    .then(({client, matches}) => fillPlayerIds(client, matches))
-    .then(({client, matches}) => {
-      return client.db()
-        .collection('matches')
-        .deleteMany({ video: matches[0].video })
-        .then(() => ({client, matches}))
-    })
-    .then(({client, matches}) => {
-      return client.db()
-        .collection('matches')
-        .insert(matches)
-        .then((results) => ({client, results}))
-    })
-    .then(({client, results}) => {
-      client.close()
-      response.status(200).json(results)
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => {
+        let matches = request.body
+        return ({client, matches})
+      })
+      .then(({client, matches}) => checkCharacters(client, matches))
+      .then(({client, matches}) => addMirrorFields(client, matches))
+      .then(({client, matches}) => {
+        let version = matches[0].version
+        if (!version) {
+          throw new Error('A version was not selected')
+        }
+        return client.db()
+          .collection('versions')
+          .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
+          .then(() => ({client, matches}))
+      })
+      .then(({client, matches}) => {
+        let channel = matches[0].channel
+        return client.db()
+          .collection('channels')
+          .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
+          .then(() => ({client, matches}))
+      })
+      .then(({client, matches}) => fillPlayerIds(client, matches))
+      .then(({client, matches}) => {
+        return client.db()
+          .collection('matches')
+          .deleteMany({ video: matches[0].video })
+          .then(() => ({client, matches}))
+      })
+      .then(({client, matches}) => {
+        return client.db()
+          .collection('matches')
+          .insert(matches)
+          .then((results) => ({client, results}))
+      })
+      .then(({client, results}) => {
+        client.close()
+        response.status(200).json(results)
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 function checkCharacters (client, matches) {
@@ -339,12 +347,18 @@ function fillPlayerIds (client, matches) {
 
 api.delete('/matches', (request, response) => {
   // TODO: implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.get('/characters', (request, response) => {
@@ -365,42 +379,54 @@ api.get('/characters', (request, response) => {
 })
 
 api.put('/characters', (request, response) => {
-  return connectMongoDB()
-    .then(client => {
-      let character = {
-        name: request.body.name,
-        id: request.body.newId,
-        iconUrl: request.body.iconUrl
-      }
-      let id = request.body.oldId || request.body.newId
-      return ({client, character, id})
-    })
-    .then(({client, character, id}) => {
-      if (id !== character.id) {
-        // TODO: fix up matches
-      }
-      return ({client, character, id})
-    })
-    .then(({client, character, id}) => client.db()
-      .collection('characters')
-      .updateOne({id: id}, {$set: character}, {upsert: true})
-      .then((results) => ({client, results}))
-    )
-    .then(({client, results}) => {
-      client.close()
-      response.status(200).json(results)
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => {
+        let character = {
+          name: request.body.name,
+          id: request.body.newId,
+          iconUrl: request.body.iconUrl
+        }
+        let id = request.body.oldId || request.body.newId
+        return ({client, character, id})
+      })
+      .then(({client, character, id}) => {
+        if (id !== character.id) {
+          // TODO: fix up matches
+        }
+        return ({client, character, id})
+      })
+      .then(({client, character, id}) => client.db()
+        .collection('characters')
+        .updateOne({id: id}, {$set: character}, {upsert: true})
+        .then((results) => ({client, results}))
+      )
+      .then(({client, results}) => {
+        client.close()
+        response.status(200).json(results)
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.delete('/characters', (request, response) => {
   // TODO: Implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.get('/players', (request, response) => {
@@ -421,32 +447,50 @@ api.get('/players', (request, response) => {
 
 api.put('/players', (request, response) => {
   // TODO: Implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.delete('/players', (request, response) => {
   // TODO: Implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.post('/players/merge', (request, response) => {
   // TODO: Implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.get('/versions', (request, response) => {
@@ -466,37 +510,49 @@ api.get('/versions', (request, response) => {
 })
 
 api.put('/versions', (request, response) => {
-  return connectMongoDB()
-    .then(client => {
-      let version = request.body
-      return ({ client, version })
-    })
-    .then(({ client, version }) => {
-      if (version._id) {
-        // TODO: fix up matches
-      }
-      return ({ client, version })
-    })
-    .then(({ client, version }) => client.db()
-      .collection('versions')
-      .updateOne({ _id: version._id }, { $set: version }, { upsert: true })
-      .then((results) => ({client, results}))
-    )
-    .then(({client, results}) => {
-      client.close()
-      response.status(200).json(results)
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => {
+        let version = request.body
+        return ({ client, version })
+      })
+      .then(({ client, version }) => {
+        if (version._id) {
+          // TODO: fix up matches
+        }
+        return ({ client, version })
+      })
+      .then(({ client, version }) => client.db()
+        .collection('versions')
+        .updateOne({ _id: version._id }, { $set: version }, { upsert: true })
+        .then((results) => ({client, results}))
+      )
+      .then(({client, results}) => {
+        client.close()
+        response.status(200).json(results)
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.delete('/versions', (request, response) => {
   // TODO: Implement this
-  return connectMongoDB()
-    .then(client => client.db())
-    .then(() => {
-      throw new Error('Not implemented yet')
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    return connectMongoDB()
+      .then(client => client.db())
+      .then(() => {
+        throw new Error('Not implemented yet')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 api.get('/channels', (request, response) => {
@@ -516,26 +572,32 @@ api.get('/channels', (request, response) => {
 })
 
 api.get('/youtube-data', (request, response) => {
-  let url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
-    request.query.v + '&key=' + youtubeKey
-  return axios.get(url)
-    .then((youtube) => {
-      if (youtube.data.items.length > 0) {
-        response.status(200).json({
-          id: request.query.v,
-          title: youtube.data.items[0].snippet.title,
-          date: youtube.data.items[0].snippet.publishedAt.split('T')[0],
-          description: youtube.data.items[0].snippet.description,
-          channel: {
-            id: youtube.data.items[0].snippet.channelId,
-            name: youtube.data.items[0].snippet.channelTitle
-          }
-        })
-      } else {
-        response.status(400).send('Invalid video')
-      }
-    })
-    .catch(error => response.status(400).send(error.toString()))
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    let url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
+      request.query.v + '&key=' + youtubeKey
+    return axios.get(url)
+      .then((youtube) => {
+        if (youtube.data.items.length > 0) {
+          response.status(200).json({
+            id: request.query.v,
+            title: youtube.data.items[0].snippet.title,
+            date: youtube.data.items[0].snippet.publishedAt.split('T')[0],
+            description: youtube.data.items[0].snippet.description,
+            channel: {
+              id: youtube.data.items[0].snippet.channelId,
+              name: youtube.data.items[0].snippet.channelTitle
+            }
+          })
+        } else {
+          response.status(400).send('Invalid video')
+        }
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
 })
 
 exports.api = functions.https.onRequest(api)

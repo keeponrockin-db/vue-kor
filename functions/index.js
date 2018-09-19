@@ -521,14 +521,17 @@ api.put('/versions', (request, response) => {
         return ({ client, version })
       })
       .then(({ client, version }) => {
-        if (version._id) {
+        if (!version.name) {
+          throw new Error('Missing name')
+        }
+        if (version.name !== 'New Version') {
           // TODO: fix up matches
         }
         return ({ client, version })
       })
       .then(({ client, version }) => client.db()
         .collection('versions')
-        .updateOne({ _id: version._id }, { $set: version }, { upsert: true })
+        .updateOne({ name: version.name }, { $set: { name: version.newName } }, { upsert: true })
         .then((results) => ({client, results}))
       )
       .then(({client, results}) => {

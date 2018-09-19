@@ -199,24 +199,24 @@
               <h3 class="mb-2">Versions</h3>
               <v-layout row align-center>
                 <v-select label="Edit Version"
-                  :items="[{ name: 'New Version'}].concat(versions)"
+                  :items="[{ name: 'New Version' }].concat(versions)"
                   item-text="name"
                   :item-value="(version) => ({
-                    id: version._id,
-                    name: version.name
+                    name: version.name,
+                    newName: version.name
                   })"
                   v-model="editVersion"
                 />
                 <v-btn icon @click="warn(deleteVersion)"><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout row align-center>
-                <v-text-field label="Name" class="mr-3" clearable v-model="editVersion.name"/>
+                <v-text-field label="Name" class="mr-3" clearable v-model="editVersion.newName"/>
                 <v-btn icon @click="saveVersion"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3 class="mb-2">Characters</h3>
               <v-layout row align-center>
                 <v-select label="Edit Character"
-                  :items="[{ name: 'New Character'}].concat(charactersList)"
+                  :items="[{ name: 'New Character' }].concat(charactersList)"
                   item-text="name"
                   :item-value="(character) => ({
                     id: character.id,
@@ -346,8 +346,12 @@ export default {
     this.loadCharacters()
     this.loadPlayers()
     this.loadVersions()
-    if (this.$firebase.auth().currentUser) {
-      this.$firebase.auth().currentUser.getIdToken()
+    this.$firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        this.step = 1
+        return
+      }
+      user.getIdToken()
         .then((token) => {
           this.$httpInterceptors.push((request) => {
             request.headers.set('Authorization', token)
@@ -358,7 +362,7 @@ export default {
             this.validateYoutubeURL(this.link)
           }
         })
-    }
+    })
   },
   watch: {
     step: function (step) {
@@ -380,13 +384,8 @@ export default {
     signIn: function (providerName) {
       this.loading = true
       this.$firebase.auth().signInWithPopup(this.$providers[providerName])
-        .then(this.$firebase.auth().currentUser.getIdToken())
-        .then((token) => {
-          this.$httpInterceptors.push((request) => {
-            request.headers.set('Authorization', token)
-          })
+        .then(() => {
           this.loading = false
-          this.step = 2
         })
         .catch((error) => {
           this.loading = false

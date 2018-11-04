@@ -13,7 +13,7 @@ Vue.prototype.$providers = {
 
 Vue.use(VueResource)
 
-let uri = config.localCloudFn
+let uri = config.cloudFn
 let matchesMethods = {
   get: { method: 'GET' },
   save: { method: 'PUT' },

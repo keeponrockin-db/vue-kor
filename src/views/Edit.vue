@@ -612,11 +612,11 @@ export default {
     },
     deleteMatches: function () {
       this.loading = true
-      this.$matches.delete(this.video.id)
+      this.$matches.delete({videoId: this.video.id})
         .then((response) => {
           this.loading = false
-          this.displayAdminSuccess('Matches deleted')
-          this.matches = []
+          this.displaySuccess('Matches deleted')
+          this.startOver()
         })
         .catch((response) => {
           this.loading = false

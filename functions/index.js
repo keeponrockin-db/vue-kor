@@ -346,16 +346,25 @@ function fillPlayerIds (client, matches) {
 }
 
 api.delete('/matches', (request, response) => {
-  // TODO: implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let videoId = request.query.videoId
+        return ({client, videoId})
+      })
+      .then(({client, videoId}) => {
+        return client.db()
+          .collection('matches')
+          .deleteMany({ video: videoId })
+          .then(() => ({client, videoId}))
+      })
+      .then(({client, videoId}) => {
+        client.close()
+        response.status(200).json(`Matches from video: ${videoId} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -580,8 +589,7 @@ api.get('/youtube-data', (request, response) => {
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
-    let url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
-      request.query.v + '&key=' + youtubeKey
+    let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${request.query.v}&key=${youtubeKey}`
     return axios.get(url)
       .then((youtube) => {
         if (youtube.data.items.length > 0) {

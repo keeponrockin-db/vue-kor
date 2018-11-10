@@ -16,7 +16,7 @@ const connectMongoDB = () => MongoClient.connect(process.env.MONGODB)
 const youtubeKey = process.env.YOUTUBEKEY
 const axios = require('axios')
 
-const itemsPerPage = 20
+const itemsPerPage = 50
 const defaultSort = {
   date: -1,
   title: 1,
@@ -423,16 +423,42 @@ api.put('/characters', (request, response) => {
 })
 
 api.delete('/characters', (request, response) => {
-  // TODO: Implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let id = request.query.id
+        let matchQuery = {
+          players: {
+            $all: [{ $elemMatch: {
+              characters: id
+            } }]
+          }
+        }
+        return ({client, id, matchQuery})
+      })
+      .then(({ client, id, matchQuery }) => client.db()
+        .collection('matches')
+        .find(matchQuery)
+        .toArray()
+        .then(matches => ({client, id, matches}))
+      )
+      .then(({client, id, matches}) => {
+        if (matches.length === 0) {
+          return client.db()
+            .collection('characters')
+            .deleteOne({ id: id })
+            .then(() => ({client, id}))
+        } else {
+          throw new Error(`Character: ${id} is used in ${matches.length} matches`)
+        }
+      })
+      .then(({client, id}) => {
+        client.close()
+        response.status(200).json(`Character: ${id} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })

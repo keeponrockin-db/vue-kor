@@ -693,30 +693,36 @@ export default {
         newId: this.editCharacter.newId
       }
       this.adminLoading = true
-      return this.uploadCharacterIcon()
-        .then((url) => {
-          character.iconUrl = url
-          return this.$characters.save(character).then(response => {
-            this.adminLoading = false
-            if (response.ok) {
-              this.displayAdminSuccess('Character saved')
-              this.loadCharacters()
-            } else {
-              this.displayAdminError(response.bodyText)
-            }
+      try {
+        return this.uploadCharacterIcon()
+          .then((url) => {
+            character.iconUrl = url
+            return this.$characters.save(character).then(response => {
+              this.adminLoading = false
+              if (response.ok) {
+                this.displayAdminSuccess('Character saved')
+                this.loadCharacters()
+              } else {
+                this.displayAdminError(response.bodyText)
+              }
+            })
           })
-        })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+          .catch((response) => {
+            this.adminLoading = false
+            this.displayAdminError(response.bodyText)
+          })
+      }
+      catch (error) {
+        this.adminLoading = false
+        this.displayAdminError(error.message)
+      }
     },
     uploadCharacterIcon: function () {
       if (!this.newCharacterIcon.filename ||
         !this.newCharacterIcon.file ||
         !this.editCharacter.name ||
         !this.editCharacter.newId) {
-        return
+          throw new Error('No icon was supplied')
       }
       let fileExtension = this.newCharacterIcon.filename.split('.').pop()
 

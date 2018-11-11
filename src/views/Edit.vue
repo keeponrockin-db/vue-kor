@@ -599,7 +599,7 @@ export default {
             .then((response) => {
               this.loading = false
               if (response.ok) {
-                this.displaySuccess('Matches saved')
+                this.displaySuccess(response.bodyText)
               } else {
                 this.displayError(response.bodyText)
               }
@@ -615,7 +615,7 @@ export default {
       this.$matches.delete({videoId: this.video.id})
         .then((response) => {
           this.loading = false
-          this.displaySuccess('Matches deleted')
+          this.displaySuccess(response.bodyText)
           this.startOver()
         })
         .catch((response) => {
@@ -641,7 +641,7 @@ export default {
         .then(response => {
           this.adminLoading = false
           if (response.ok) {
-            this.displayAdminSuccess('Version saved')
+            this.displayAdminSuccess(response.bodyText)
             this.loadVersions()
           } else {
             this.displayAdminError(response.bodyText)
@@ -654,10 +654,10 @@ export default {
     },
     deleteVersion: function () {
       this.adminLoading = true
-      this.$versions.delete(this.editVersion.id)
+      this.$versions.delete({ version: this.editVersion.name })
         .then((response) => {
           this.adminLoading = false
-          this.displayAdminSuccess('Version deleted')
+          this.displayAdminSuccess(response.bodyText)
           this.loadVersions()
         })
         .catch((response) => {
@@ -700,7 +700,7 @@ export default {
             return this.$characters.save(character).then(response => {
               this.adminLoading = false
               if (response.ok) {
-                this.displayAdminSuccess('Character saved')
+                this.displayAdminSuccess(response.bodyText)
                 this.loadCharacters()
               } else {
                 this.displayAdminError(response.bodyText)
@@ -738,10 +738,10 @@ export default {
     },
     deleteCharacter: function () {
       this.adminLoading = true
-      this.$characters.delete(this.editCharacter)
+      this.$characters.delete({ id: this.editCharacter.id })
         .then((response) => {
           this.adminLoading = false
-          this.displayAdminSuccess('Character deleted')
+          this.displayAdminSuccess(response.bodyText)
           this.loadCharacters()
         })
         .catch((response) => {
@@ -754,7 +754,7 @@ export default {
       this.$players.save()
         .then((response) => {
           this.adminLoading = false
-          this.displayAdminSuccess('Player saved')
+          this.displayAdminSuccess(response.bodyText)
           this.loadPlayers()
         })
         .catch((response) => {
@@ -766,7 +766,7 @@ export default {
       this.adminLoading = true
       this.$players.delete()
         .then((response) => {
-          this.displayAdminSuccess('Player deleted')
+          this.displayAdminSuccess(response.bodyText)
           this.adminLoading = false
           this.loadPlayers()
         })
@@ -779,7 +779,7 @@ export default {
       this.adminLoading = true
       this.$players.merge()
         .then((response) => {
-          this.displayAdminSuccess('Players merged')
+          this.displayAdminSuccess(response.bodyText)
           this.adminLoading = false
           this.loadPlayers()
         })

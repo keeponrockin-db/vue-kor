@@ -226,11 +226,11 @@ api.put('/matches', (request, response) => {
         return client.db()
           .collection('matches')
           .insert(matches)
-          .then((results) => ({client, results}))
+          .then(() => ({client, matches}))
       })
-      .then(({client, results}) => {
+      .then(({client, matches}) => {
         client.close()
-        response.status(200).json(results)
+        response.status(200).send(`Matches for video: ${matches[0].video} successfully added.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -364,7 +364,7 @@ api.delete('/matches', (request, response) => {
       })
       .then(({client, videoId}) => {
         client.close()
-        response.status(200).json(`Matches from video: ${videoId} successfully deleted.`)
+        response.status(200).send(`Matches from video: ${videoId} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -412,11 +412,11 @@ api.put('/characters', (request, response) => {
       .then(({client, character, id}) => client.db()
         .collection('characters')
         .updateOne({id: id}, {$set: character}, {upsert: true})
-        .then((results) => ({client, results}))
+        .then(() => ({client, character}))
       )
-      .then(({client, results}) => {
+      .then(({client, character}) => {
         client.close()
-        response.status(200).json(results)
+        response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -458,7 +458,7 @@ api.delete('/characters', (request, response) => {
       })
       .then(({client, id}) => {
         client.close()
-        response.status(200).json(`Character: ${id} successfully deleted.`)
+        response.status(200).send(`Character: ${id} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -567,27 +567,53 @@ api.put('/versions', (request, response) => {
       .then(({ client, version }) => client.db()
         .collection('versions')
         .updateOne({ name: version.name }, { $set: { name: version.newName } }, { upsert: true })
-        .then((results) => ({client, results}))
+        .then(() => ({client, version}))
       )
-      .then(({client, results}) => {
+      .then(({client, version}) => {
         client.close()
-        response.status(200).json(results)
+        if (version.name === 'New Version') {
+          response.status(200).send(`Version: ${version.newName} successfully saved.`)
+        } else {
+          response.status(200).send(`Version: ${version.name} successfully renamed to ${version.newName}.`)
+        }
       })
       .catch(error => response.status(400).send(error.toString()))
   })
 })
 
 api.delete('/versions', (request, response) => {
-  // TODO: Implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let version = request.query.version
+        let matchQuery = {
+          version: version
+        }
+        return ({client, version, matchQuery})
+      })
+      .then(({ client, version, matchQuery }) => client.db()
+        .collection('matches')
+        .find(matchQuery)
+        .toArray()
+        .then(matches => ({client, version, matches}))
+      )
+      .then(({client, version, matches}) => {
+        if (matches.length === 0) {
+          return client.db()
+            .collection('versions')
+            .deleteOne({ name: version })
+            .then(() => ({client, version}))
+        } else {
+          throw new Error(`Version: ${version} is used in ${matches.length} matches`)
+        }
+      })
+      .then(({client, version}) => {
+        client.close()
+        response.status(200).send(`Version: ${version} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })

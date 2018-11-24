@@ -4,7 +4,7 @@
       <v-layout column align-center>
         <v-toolbar dense dark color="primary">
           <router-link to="/">
-            <v-btn icon><v-icon>mdi-home</v-icon></v-btn>
+            <img src="img/icons/logo-icon-white.svg">
           </router-link>
           <router-link to="edit">
             <v-btn icon><v-icon>mdi-plus-box</v-icon></v-btn>

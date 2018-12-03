@@ -29,3 +29,5 @@ cloud-key\.json
 src/config\.js
 
 *.log
+
+\.firebase/hosting\.ZGlzdA\.cache

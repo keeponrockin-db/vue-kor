@@ -140,7 +140,7 @@
                 <v-btn icon class="ma-0" @click="deleteMatch(match)"><v-icon>delete</v-icon></v-btn>
               </v-layout>
             </v-layout>
-            <v-btn @click="warn(startOver)">
+            <v-btn @click="warn(startOver, null, 'Starting over will lose unsaved timestamps.')">
               <v-icon left>undo</v-icon>
               Start over
             </v-btn>
@@ -148,11 +148,11 @@
               <v-icon left>playlist_add</v-icon>
               Add Match
             </v-btn>
-            <v-btn v-if="!loading" @click="save">
+            <v-btn v-if="!loading" @click="warn(save, null, 'Saving will overwrite previous timestamps.')">
               <v-icon left>save</v-icon>
               Save
             </v-btn>
-            <v-btn v-if="!loading" @click="warn(deleteMatches)">
+            <v-btn v-if="!loading" @click="warn(deleteMatches, null, 'Deleted matches cannot be recovered.')">
               <v-icon left>delete</v-icon>
               Delete
             </v-btn>
@@ -207,11 +207,15 @@
                   })"
                   v-model="editVersion"
                 />
-                <v-btn icon @click="warn(deleteVersion)"><v-icon>delete</v-icon></v-btn>
+                <v-btn icon @click="warn(deleteVersion, editVersion.name,
+                  `Are you sure you want to delete version: ${editVersion.name}`)"><v-icon>delete</v-icon>
+                </v-btn>
               </v-layout>
               <v-layout row align-center>
                 <v-text-field label="Name" class="mr-3" clearable v-model="editVersion.newName"/>
-                <v-btn icon @click="saveVersion"><v-icon>save</v-icon></v-btn>
+                <v-btn icon @click="warn(saveVersion, editVersion, 
+                  `Saving version: ${editVersion.newName} will overwrite ${editVersion.name}`)"><v-icon>save</v-icon>
+                </v-btn>
               </v-layout>
               <h3 class="mb-2">Characters</h3>
               <v-layout row align-center>
@@ -226,7 +230,9 @@
                   })"
                   v-model="editCharacter"
                 />
-                <v-btn icon @click="deleteCharacter"><v-icon>delete</v-icon></v-btn>
+                <v-btn icon @click="warn(deleteCharacter, editCharacter.id,
+                  `Are you sure you want to delete character: ${editCharacter.id}`)"><v-icon>delete</v-icon>
+                </v-btn>
               </v-layout>
               <v-layout :column="$vuetify.breakpoint.xsOnly">
                 <v-layout row align-center>
@@ -247,7 +253,9 @@
                 </v-layout>
                 <v-layout row align-center>
                   <v-text-field label="Id" clearable v-model="editCharacter.newId"/>
-                  <v-btn icon @click="saveCharacter"><v-icon>save</v-icon></v-btn>
+                  <v-btn icon @click="warn(saveCharacter, null, 
+                    `Saving character: ${editCharacter.newId} will overwrite character: ${editCharacter.id}.`)"><v-icon>save</v-icon>
+                  </v-btn>
                 </v-layout>
               </v-layout>
               <h3>Players</h3>
@@ -274,14 +282,14 @@
     </v-layout>
     <v-dialog v-model="warning" width="500">
       <v-card>
-        <v-card-title class="headline">Warning</v-card-title>
+        <v-card-title class="headline"><v-icon left>warning</v-icon>Warning</v-card-title>
         <v-card-text>
-          This action cannot be undone. Continue?
+          {{warningMessage}}
         </v-card-text>
         <v-card-actions>
           <v-spacer/>
-          <v-btn @click="ignoreWarning">Yes</v-btn>
-          <v-btn @click="warning = false">No</v-btn>
+          <v-btn @click="ignoreWarning">Continue</v-btn>
+          <v-btn @click="warning = false">Cancel</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -339,6 +347,7 @@ export default {
       id: ''
     },
     warning: false,
+    warningMessage: '',
     action: function () {},
     actionArgs: null
   }),
@@ -635,9 +644,9 @@ export default {
       this.errorMessage = ''
       this.error = false
     },
-    saveVersion: function () {
+    saveVersion: function (version) {
       this.adminLoading = true
-      this.$versions.save(this.editVersion)
+      this.$versions.save(version)
         .then(response => {
           this.adminLoading = false
           if (response.ok) {
@@ -652,9 +661,9 @@ export default {
           this.displayAdminError(response.bodyText)
         })
     },
-    deleteVersion: function () {
+    deleteVersion: function (versionName) {
       this.adminLoading = true
-      this.$versions.delete({ version: this.editVersion.name })
+      this.$versions.delete({ version: versionName })
         .then((response) => {
           this.adminLoading = false
           this.displayAdminSuccess(response.bodyText)
@@ -694,7 +703,10 @@ export default {
       }
       this.adminLoading = true
       try {
-        return this.uploadCharacterIcon()
+        return this.uploadCharacterIcon(this.newCharacterIcon.filename,
+          this.newCharacterIcon.file,
+          this.editCharacter.newId,
+          this.editCharacter.iconUrl)
           .then((url) => {
             character.iconUrl = url
             return this.$characters.save(character).then(response => {
@@ -717,28 +729,27 @@ export default {
         this.displayAdminError(error.message)
       }
     },
-    uploadCharacterIcon: function () {
-      if (!this.newCharacterIcon.filename ||
-        !this.newCharacterIcon.file ||
-        !this.editCharacter.name ||
-        !this.editCharacter.newId) {
-          throw new Error('No icon was supplied')
+    uploadCharacterIcon: function (filename, file, id, oldUrl) {
+      if (!filename || !file || !id) {
+        if (oldUrl) {
+          return Promise.resolve().then(() => oldUrl)
+        }
+        throw new Error('No icon was supplied')
       }
-      let fileExtension = this.newCharacterIcon.filename.split('.').pop()
-
+      let fileExtension = filename.split('.').pop()
       let storage = this.$firebase.storage()
       let storageRef = storage.ref()
-      let iconRef = storageRef.child('characterIcons').child(`${this.editCharacter.newId}.${fileExtension}`)
-      return iconRef.put(this.newCharacterIcon.file)
+      let iconRef = storageRef.child('characterIcons').child(`${id}.${fileExtension}`)
+      return iconRef.put(file)
         .then((snapshot) => {
           return snapshot.ref.getDownloadURL().then((url) => {
             return url
           })
         })
     },
-    deleteCharacter: function () {
+    deleteCharacter: function (characterId) {
       this.adminLoading = true
-      this.$characters.delete({ id: this.editCharacter.id })
+      this.$characters.delete({ id: characterId })
         .then((response) => {
           this.adminLoading = false
           this.displayAdminSuccess(response.bodyText)
@@ -794,8 +805,14 @@ export default {
     deleteAlias: function () {
       // TODO: finish
     },
-    warn: function (action, args) {
+    warn: function (action, args, message) {
       this.warning = true
+      if (message) {
+        this.warningMessage = message
+      } else {
+        this.warningMessage = 'This action cannot be undone.'
+      }
+
       this.action = action
       this.actionArgs = args
     },

@@ -504,9 +504,37 @@ api.delete('/players', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let id = request.query.id
+        let matchQuery = {
+          players: {
+            $all: [{ $elemMatch: {
+              id: id
+            } }]
+          }
+        }
+        return ({client, id, matchQuery})
+      })
+      .then(({ client, id, matchQuery }) => client.db()
+        .collection('matches')
+        .find(matchQuery)
+        .toArray()
+        .then(matches => ({client, id, matches}))
+      )
+      .then(({client, id, matches}) => {
+        if (matches.length === 0) {
+          console.log('do delete ' + id)
+          // return client.db()
+          //   .collection('players')
+          //   .deleteOne({ name: id })
+          //   .then(() => ({client, id}))
+        } else {
+          throw new Error(`Player: ${id} is used in ${matches.length} matches`)
+        }
+      })
+      .then(({client, id}) => {
+        client.close()
+        response.status(200).send(`Player: ${id} successfully deleted.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })

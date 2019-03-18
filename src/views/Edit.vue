@@ -213,7 +213,7 @@
               </v-layout>
               <v-layout row align-center>
                 <v-text-field label="Name" class="mr-3" clearable v-model="editVersion.newName"/>
-                <v-btn icon @click="warn(saveVersion, editVersion, 
+                <v-btn icon @click="warn(saveVersion, editVersion,
                   `Saving version: ${editVersion.newName} will overwrite ${editVersion.name}`)"><v-icon>save</v-icon>
                 </v-btn>
               </v-layout>
@@ -253,7 +253,7 @@
                 </v-layout>
                 <v-layout row align-center>
                   <v-text-field label="Id" clearable v-model="editCharacter.newId"/>
-                  <v-btn icon @click="warn(saveCharacter, null, 
+                  <v-btn icon @click="warn(saveCharacter, null,
                     `Saving character: ${editCharacter.newId} will overwrite character: ${editCharacter.id}.`)"><v-icon>save</v-icon>
                   </v-btn>
                 </v-layout>
@@ -275,6 +275,9 @@
                 <v-autocomplete label="Merge with Player" clearable :items="aliases"/>
                 <v-btn icon @click="warn(mergePlayers)"><v-icon>save</v-icon></v-btn>
               </v-layout>
+              <h3>Import Matches</h3>
+              <v-btn icon @click="uploadMatches"><v-icon>attachment</v-icon></v-btn>
+              <v-btn icon @click="warn(importMatches)"><v-icon>save</v-icon></v-btn>
             </v-form>
           </v-layout>
         </v-card>
@@ -604,19 +607,19 @@ export default {
           return match
         })
         this.loading = true
-          this.$matches.save(matches)
-            .then((response) => {
-              this.loading = false
-              if (response.ok) {
-                this.displaySuccess(response.bodyText)
-              } else {
-                this.displayError(response.bodyText)
-              }
-            })
-            .catch((response) => {
-              this.loading = false
+        this.$matches.save(matches)
+          .then((response) => {
+            this.loading = false
+            if (response.ok) {
+              this.displaySuccess(response.bodyText)
+            } else {
               this.displayError(response.bodyText)
-            })
+            }
+          })
+          .catch((response) => {
+            this.loading = false
+            this.displayError(response.bodyText)
+          })
       }
     },
     deleteMatches: function () {
@@ -723,8 +726,7 @@ export default {
             this.adminLoading = false
             this.displayAdminError(response.bodyText)
           })
-      }
-      catch (error) {
+      } catch (error) {
         this.adminLoading = false
         this.displayAdminError(error.message)
       }

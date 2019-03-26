@@ -276,7 +276,14 @@
                 <v-btn icon @click="warn(mergePlayers)"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3>Import Matches</h3>
-              <v-btn icon @click="uploadMatches"><v-icon>attachment</v-icon></v-btn>
+              <input
+                type="file"
+                style="display: none"
+                ref="importMatches"
+                accept="json/*"
+                @change="onImportFilePicked"
+              />
+              <v-btn icon @click="pickImportFile"><v-icon>attachment</v-icon></v-btn>
               <v-btn icon @click="warn(importMatches)"><v-icon>save</v-icon></v-btn>
             </v-form>
           </v-layout>
@@ -806,6 +813,19 @@ export default {
     },
     deleteAlias: function () {
       // TODO: finish
+    },
+    pickImportFile: function () {
+      this.$refs.importMatches.click()
+    },
+    onImportFilePicked (event) {
+      let files = event.target.files
+      if (files[0] !== undefined) {
+        let fr = new FileReader()
+        fr.readAsText(files[0])
+        fr.addEventListener('load', () => {
+          console.log(fr.result)
+        })
+      }
     },
     warn: function (action, args, message) {
       this.warning = true

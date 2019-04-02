@@ -13,20 +13,26 @@ Vue.prototype.$providers = {
 
 Vue.use(VueResource)
 
-let uri = config.cloudFn
+let uri = config.localCloudFn
 let matchesMethods = {
   get: { method: 'GET' },
   save: { method: 'PUT' },
   delete: { method: 'DELETE' }
 }
-let matches = Vue.resource(`${uri}/matches/`, {}, matchesMethods)
+let matchesRes = Vue.resource(`${uri}/matches/`, {}, matchesMethods)
+
+let importMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' }
+}
+let importRes = Vue.resource(`${uri}/import/`, {}, importMethods)
 
 let charactersMethods = {
   get: { method: 'GET' },
   save: { method: 'PUT' },
   delete: { method: 'DELETE' }
 }
-let characters = Vue.resource(`${uri}/characters/`, {}, charactersMethods)
+let charactersRes = Vue.resource(`${uri}/characters/`, {}, charactersMethods)
 
 let playersMethods = {
   get: { method: 'GET' },
@@ -34,44 +40,47 @@ let playersMethods = {
   delete: { method: 'DELETE' },
   merge: { method: 'POST', url: `${uri}/players/merge/` }
 }
-let players = Vue.resource(`${uri}/players/`, {}, playersMethods)
+let playersRes = Vue.resource(`${uri}/players/`, {}, playersMethods)
 
 let versionsMethods = {
   get: { method: 'GET' },
   save: { method: 'PUT' },
   delete: { method: 'DELETE' }
 }
-let versions = Vue.resource(`${uri}/versions/`, {}, versionsMethods)
+let versionsRes = Vue.resource(`${uri}/versions/`, {}, versionsMethods)
 
 let channelsMethods = {
   get: { method: 'GET' }
 }
-let channels = Vue.resource(`${uri}/channels/`, {}, channelsMethods)
+let channelsRes = Vue.resource(`${uri}/channels/`, {}, channelsMethods)
 
 let youtubeMethods = {
   get: { method: 'GET' }
 }
-let youtubeData = Vue.resource(`${uri}/youtube-data/`, {}, youtubeMethods)
+let youtubeDataRes = Vue.resource(`${uri}/youtube-data/`, {}, youtubeMethods)
 
 Vue.use({
   install: () => {
     Object.defineProperty(Vue.prototype, '$matches', {
-      get () { return matches }
+      get () { return matchesRes }
+    })
+    Object.defineProperty(Vue.prototype, '$import', {
+      get () { return importRes }
     })
     Object.defineProperty(Vue.prototype, '$characters', {
-      get () { return characters }
+      get () { return charactersRes }
     })
     Object.defineProperty(Vue.prototype, '$players', {
-      get () { return players }
+      get () { return playersRes }
     })
     Object.defineProperty(Vue.prototype, '$versions', {
-      get () { return versions }
+      get () { return versionsRes }
     })
     Object.defineProperty(Vue.prototype, '$channels', {
-      get () { return channels }
+      get () { return channelsRes }
     })
     Object.defineProperty(Vue.prototype, '$youtubeData', {
-      get () { return youtubeData }
+      get () { return youtubeDataRes }
     })
     Object.defineProperty(Vue.prototype, '$firebase', {
       get () { return firebase }

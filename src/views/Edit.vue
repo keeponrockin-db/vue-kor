@@ -28,9 +28,6 @@
         </v-alert>
         <v-stepper-content step="1">
           <v-layout column align-center>
-            <v-btn @click="signIn('twitter')">
-              <v-icon left>mdi-twitter</v-icon> Sign in with Twitter
-            </v-btn>
             <v-btn @click="signIn('google')">
               <v-icon left>mdi-google</v-icon> Sign in with Google
             </v-btn>
@@ -283,8 +280,11 @@
                 accept="json/*"
                 @change="onImportFilePicked"
               />
-              <v-btn icon @click="pickImportFile"><v-icon>attachment</v-icon></v-btn>
-              <v-btn icon @click="warn(importMatches)"><v-icon>save</v-icon></v-btn>
+              <v-layout row align-start>
+                <v-btn icon @click="pickImportFile"><v-icon>attachment</v-icon></v-btn>
+                <v-text-field label="Import File" readonly v-model="importFilename"/>
+                <v-btn icon @click="warn(saveImport)"><v-icon>save</v-icon></v-btn>
+              </v-layout>
             </v-form>
           </v-layout>
         </v-card>
@@ -356,6 +356,8 @@ export default {
       aliases: [],
       id: ''
     },
+    importMatches: {},
+    importFilename: "No file selected",
     warning: false,
     warningMessage: '',
     action: function () {},
@@ -823,9 +825,26 @@ export default {
         let fr = new FileReader()
         fr.readAsText(files[0])
         fr.addEventListener('load', () => {
-          console.log(fr.result)
+          this.importFilename = files[0].name
+          this.importMatches = JSON.parse(fr.result)
         })
       }
+    },
+    saveImport () {
+      this.adminLoading = true
+      this.$import.save(this.importMatches)
+        .then((response) => {
+          this.adminLoading = false
+          if (response.ok) {
+            this.displayAdminSuccess(response.bodyText)
+          } else {
+            this.displayAdminError(response.bodyText)
+          }
+        })
+        .catch((response) => {
+          this.adminLoading = false
+          this.displayAdminError(response.bodyText)
+        })
     },
     warn: function (action, args, message) {
       this.warning = true

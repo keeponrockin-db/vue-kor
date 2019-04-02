@@ -6,11 +6,11 @@
           <router-link to="/">
             <img src="img/icons/logo-icon-white.svg">
           </router-link>
-          <v-spacer/>
           <v-toolbar-title class="white--text">{{ $config.title }}</v-toolbar-title>
           <router-link to="edit">
             <v-btn icon><v-icon>mdi-plus-box</v-icon></v-btn>
           </router-link>
+          <v-spacer/>
           <v-btn icon @click="$firebase.auth().signOut()"><v-icon>logout</v-icon></v-btn>
         </v-toolbar>
         <div id="router-view"><router-view/></div>

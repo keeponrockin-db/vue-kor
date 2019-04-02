@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
-admin.initializeApp(functions.config().firebase)
+admin.initializeApp()
 
 const express = require('express')
 const cors = require('cors')({ origin: true })
@@ -191,50 +191,58 @@ api.put('/matches', (request, response) => {
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    let matches = request.body
+
     return connectMongoDB()
       .then(client => {
-        let matches = request.body
         return ({client, matches})
       })
-      .then(({client, matches}) => checkCharacters(client, matches))
-      .then(({client, matches}) => addMirrorFields(client, matches))
       .then(({client, matches}) => {
-        let version = matches[0].version
-        if (!version) {
-          throw new Error('A version was not selected')
-        }
-        return client.db()
-          .collection('versions')
-          .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
-          .then(() => ({client, matches}))
+        return addMatches(client, matches).then(() => ({client}))
       })
-      .then(({client, matches}) => {
-        let channel = matches[0].channel
-        return client.db()
-          .collection('channels')
-          .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
-          .then(() => ({client, matches}))
-      })
-      .then(({client, matches}) => fillPlayerIds(client, matches))
-      .then(({client, matches}) => {
-        return client.db()
-          .collection('matches')
-          .deleteMany({ video: matches[0].video })
-          .then(() => ({client, matches}))
-      })
-      .then(({client, matches}) => {
-        return client.db()
-          .collection('matches')
-          .insert(matches)
-          .then(() => ({client, matches}))
-      })
-      .then(({client, matches}) => {
+      .then(({client}) => {
         client.close()
-        response.status(200).send(`Matches for video: ${matches[0].video} successfully added.`)
+      })
+      .then(() => {
+        response.status(200).send(`Matches for video: ${matches[0].video} successfully saved.`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
 })
+
+function addMatches (client, matches) {
+  return checkCharacters(client, matches)
+    .then(({client, matches}) => addMirrorFields(client, matches))
+    .then(({client, matches}) => {
+      let version = matches[0].version
+      if (!version) {
+        throw new Error('A version was not selected')
+      }
+      return client.db()
+        .collection('versions')
+        .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
+        .then(() => ({client, matches}))
+    })
+    .then(({client, matches}) => {
+      let channel = matches[0].channel
+      return client.db()
+        .collection('channels')
+        .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
+        .then(() => ({client, matches}))
+    })
+    .then(({client, matches}) => fillPlayerIds(client, matches))
+    .then(({client, matches}) => {
+      return client.db()
+        .collection('matches')
+        .deleteMany({ video: matches[0].video })
+        .then(() => ({client, matches}))
+    })
+    .then(({client, matches}) => {
+      return client.db()
+        .collection('matches')
+        .insert(matches)
+    })
+}
 
 function checkCharacters (client, matches) {
   return client.db()
@@ -370,6 +378,61 @@ api.delete('/matches', (request, response) => {
   })
 })
 
+api.put('/import', (request, response) => {
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    let videos = request.body
+
+    if (!auditImport(videos)) { response.status(400).send('Improperly formatted import file.') }
+
+    return connectMongoDB()
+      .then(client => {
+        return ({client, videos})
+      })
+      .then(({client, videos}) => {
+        let promiseArray = []
+        try {
+          videos.forEach(video => {
+            promiseArray.push(addMatches(client, video))
+          })
+          return Promise.all(promiseArray).then(() => ({client}))
+        } catch (error) {
+          throw error
+        }
+      })
+      .then(({client}) => {
+        client.close()
+      })
+      .then(() => {
+        response.status(200).send('Matches successfully imported.')
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
+})
+
+function auditImport (videos) {
+  videos.forEach(video => {
+    let videoId = video[0].video
+    video.forEach(match => {
+      if (!(match.timestamp &&
+        match.players &&
+        match.video &&
+        match.title &&
+        match.channel &&
+        match.date &&
+        match.version)) {
+        return false
+      }
+      if (match.video !== videoId) { return false }
+    })
+  })
+
+  return true
+}
+
 api.get('/characters', (request, response) => {
   return connectMongoDB()
     .then(client => client.db()
@@ -392,15 +455,16 @@ api.put('/characters', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
+    let character = {
+      name: request.body.name,
+      id: request.body.newId,
+      iconUrl: request.body.iconUrl
+    }
+    let id = request.body.oldId || request.body.newId
+
     return connectMongoDB()
       .then(client => {
-        let character = {
-          name: request.body.name,
-          id: request.body.newId,
-          iconUrl: request.body.iconUrl
-        }
-        let id = request.body.oldId || request.body.newId
         return ({client, character, id})
       })
       .then(({client, character, id}) => {
@@ -578,9 +642,10 @@ api.put('/versions', (request, response) => {
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+    let version = request.body
+
     return connectMongoDB()
       .then(client => {
-        let version = request.body
         return ({ client, version })
       })
       .then(({ client, version }) => {

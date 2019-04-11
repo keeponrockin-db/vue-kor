@@ -232,6 +232,12 @@ function addMatches (client, matches) {
     })
     .then(({client, matches}) => fillPlayerIds(client, matches))
     .then(({client, matches}) => {
+      matches.forEach((match) => {
+        if (match.timestamp === '00h00m00s') { match.timestamp = '00h00m01s' }
+      })
+      return ({client, matches})
+    })
+    .then(({client, matches}) => {
       return client.db()
         .collection('matches')
         .deleteMany({ video: matches[0].video })

@@ -33,7 +33,7 @@
         <v-select clearable label="Versions" multiple :items="versions" item-text="name" v-model="selectedVersions"/>
         <v-select clearable label="Channels" multiple :items="channels" item-text="name" item-value="id" v-model="selectedChannels"/>
         <v-layout align-center>
-          <v-text-field clearable label="Title"/>
+          <v-text-field clearable label="Title" v-model="title"/>
           <v-btn icon>
             <v-icon>search</v-icon>
           </v-btn>
@@ -61,13 +61,14 @@
       No matches were found
     </v-alert>
     <v-progress-linear indeterminate v-show="loading"/>
+    <v-layout column v-if="!loading">
     <MatchRow
-      v-if="!loading"
       v-for="(match, i) in matches"
       :key="i"
       v-bind="match"
       :consecutiveMatch="(i > 0) && (matches[i - 1].video === match.video)"
     />
+    </v-layout>
     <v-layout class="mt-3">
       <v-spacer/>
       <v-pagination
@@ -118,6 +119,7 @@ export default {
     selectedVersions: [],
     channels: [],
     selectedChannels: [],
+    title: '',
     showToTop: false
   }),
   mounted: function () {
@@ -151,6 +153,11 @@ export default {
       let query = Object.assign({}, this.query)
       query.channels = channels.filter((channel) => channel).join(',')
       this.$router.push({ path: '/', query: query })
+    },
+    title: function (title) {
+      let query = Object.assign({}, this.query)
+      query.title = title
+      this.$router.push( { path: '/', query: query })
     },
     page: function (page) {
       let query = Object.assign({}, this.query)

@@ -94,6 +94,7 @@ function formMatchQuery (query, players) {
 
   if (query.versions) { matchQuery.version = { $in: query.versions.split(',') } }
   if (query.channels) { matchQuery['channel.id'] = { $in: query.channels.split(',') } }
+  if (query.title) { matchQuery['$text'] = { $search: query.title } }
 
   let playerNames = [query.p1, query.p2]
 

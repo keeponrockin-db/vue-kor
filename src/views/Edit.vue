@@ -159,12 +159,12 @@
     </v-stepper>
     <v-layout>
       <v-spacer/>
-      <v-dialog v-model="admin"
+      <v-dialog v-model="showAdminSettings"
         fullscreen
         hide-overlay
         transition="dialog-bottom-transition"
       >
-        <v-btn v-show="$firebase.auth().currentUser" dark slot="activator">
+        <v-btn v-show="$firebase.auth().currentUser && isAdmin" dark slot="activator">
           <v-icon left>settings</v-icon>
           Admin Settings
         </v-btn>
@@ -172,7 +172,7 @@
           <v-toolbar dark>
             <v-toolbar-title>Admin Settings</v-toolbar-title>
             <v-spacer/>
-            <v-btn icon dark @click.native="admin = false">
+            <v-btn icon dark @click.native="showAdminSettings = false">
               <v-icon>arrow_back</v-icon>
             </v-btn>
           </v-toolbar>
@@ -336,7 +336,8 @@ export default {
     errorMessage: '',
     manualEntry: '',
     validMatches: false,
-    admin: false,
+    isAdmin: false,
+    showAdminSettings: false,
     adminLoading: false,
     adminSuccess: false,
     adminSuccessMessage: '',
@@ -372,11 +373,27 @@ export default {
         this.step = 1
         return
       }
+
       user.getIdToken()
         .then((token) => {
           this.$httpInterceptors.push((request) => {
             request.headers.set('Authorization', token)
           })
+
+          this.$users.get({uid: user.uid}).then((response) => {
+            let userData = response.body[0]
+            if (userData) {
+              this.isAdmin = userData.admin
+            } else {
+              let newUser = {
+                uid: user.uid,
+                email: user.email,
+                admin: false
+              }
+              this.$users.save(newUser)
+            }
+          })
+
           this.step = 2
           if (this.v) {
             this.link = `https://www.youtube.com/watch?v=${this.v}`

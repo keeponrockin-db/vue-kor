@@ -54,6 +54,12 @@ let channelsMethods = {
 }
 let channelsRes = Vue.resource(`${uri}/channels/`, {}, channelsMethods)
 
+let userMethods = {
+  get: { method: 'GET' },
+  save: { method: 'PUT' }
+}
+let usersRes = Vue.resource(`${uri}/users/`, {}, userMethods)
+
 let youtubeMethods = {
   get: { method: 'GET' }
 }
@@ -78,6 +84,9 @@ Vue.use({
     })
     Object.defineProperty(Vue.prototype, '$channels', {
       get () { return channelsRes }
+    })
+    Object.defineProperty(Vue.prototype, '$users', {
+      get () { return usersRes }
     })
     Object.defineProperty(Vue.prototype, '$youtubeData', {
       get () { return youtubeDataRes }

@@ -763,4 +763,49 @@ api.get('/youtube-data', (request, response) => {
   })
 })
 
+api.get('/users', (request, response) => {
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  return connectMongoDB()
+    .then(client => client.db()
+      .collection('users')
+      .find(request.query)
+      .toArray()
+      .then(users => ({ client, users }))
+    )
+    .then(({client, users}) => {
+      client.close()
+      return users
+    })
+    .then(users => response.status(200).json(users))
+    .catch(error => response.status(400).send(error.toString()))
+})
+
+api.put('/users', (request, response) => {
+  if (!request.headers.authorization) {
+    response.status(403).send('Unauthorized')
+  }
+
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
+    let user = request.body
+
+    return connectMongoDB()
+      .then(client => {
+        return ({ client, user })
+      })
+      .then(({ client, user }) => client.db()
+        .collection('users')
+        .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
+        .then(() => ({client, user}))
+      )
+      .then(({client, user}) => {
+        client.close()
+        response.status(200).send(`Version: ${user.email} successfully saved.`)
+      })
+      .catch(error => response.status(400).send(error.toString()))
+  })
+})
+
 exports.api = functions.https.onRequest(api)

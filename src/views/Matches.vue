@@ -8,7 +8,7 @@
         >
           <v-btn class="ma-1" fab small slot="activator" icon>
             <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
-              mdi-account-outline
+              mdi-account-question
             </v-icon>
             <v-avatar size="40px" v-if="selectedCharacters[i - 1][j - 1]">
               <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>
@@ -16,7 +16,7 @@
           </v-btn>
           <v-list>
             <v-list-tile @click="selectCharacter(i, j, undefined)">
-              <v-avatar class="mr-1" size="36px"><v-icon>mdi-account-outline</v-icon></v-avatar>
+              <v-avatar class="mr-1" size="36px"><v-icon>mdi-account-question</v-icon></v-avatar>
               Any Character
             </v-list-tile>
             <v-list-tile v-for="character in characters" :key="character.id" @click="selectCharacter(i, j, character.id)">

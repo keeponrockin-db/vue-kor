@@ -11,7 +11,9 @@
             <v-btn icon><v-icon>mdi-plus-box</v-icon></v-btn>
           </router-link>
           <v-spacer/>
-          <v-btn icon @click="$firebase.auth().signOut()"><v-icon>logout</v-icon></v-btn>
+          <v-btn icon v-show="$firebase.auth().currentUser" @click="$firebase.auth().signOut()">
+            <v-icon>logout</v-icon>
+          </v-btn>
         </v-toolbar>
         <div id="router-view"><router-view/></div>
       </v-layout>

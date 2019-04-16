@@ -535,8 +535,8 @@ export default {
       let lines = this.manualEntry.split('\n')
       lines.forEach((line) => {
         if (line) {
-          let pattern = /(?:([0-9]{1,2})(?:h|:))?([0-9]{1,2})(?:m|:)([0-9]{1,2})(?:s)?\s+(.*)/i
-          let match = line.match(pattern)
+          let timeStampPattern = /(?:([0-9]{1,2})(?:h|:))?([0-9]{1,2})(?:m|:)([0-9]{1,2})(?:s)?\s+(.*)/i
+          let match = line.match(timeStampPattern)
           if (match) {
             let hours = match[1] ? match[1] : '00'
             let minutes = match[2]
@@ -550,9 +550,13 @@ export default {
             let timestamp = `${times[0]}h${times[1]}m${times[2]}s`
 
             let players = match[4]
-            pattern = /\s*(.*)\s+\(\s*(.*)\s*\)\s+vs\s+(.*)\s+\(\s*(.*)\s*\)\s*/i
-            match = players.match(pattern)
-            if (match) {
+            let playersPattern = /\s*(.*)\s+\(\s*(.*)\s*\)\s+vs\s+(.*)\s+\(\s*(.*)\s*\)\s*/i
+            let player1Pattern = /\s*(.*)\s+\(\s*(.*)\s*\)\s+vs\s+\(?(\w+)\)?/i
+            let player2Pattern = /\(?(\w+)\)?\s+vs\s+(.*)\s+\(\s*(.*)\s*\)\s*/i
+            let charactersOnlyPattern = /\(?(\w+)\)?\s+vs\s+\(?(\w+)\)?/i
+
+            if (players.match(playersPattern)) {
+              let match = players.match(playersPattern)
               matches.push({
                 timestamp: timestamp,
                 players: [
@@ -563,6 +567,51 @@ export default {
                   {
                     name: match[3],
                     characters: match[4].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  }
+                ]
+              })
+            } else if (players.match(player1Pattern)) {
+              let match = players.match(player1Pattern)
+              matches.push({
+                timestamp: timestamp,
+                players: [
+                  {
+                    name: match[1],
+                    characters: match[2].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  },
+                  {
+                    name: '',
+                    characters: match[3].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  }
+                ]
+              })
+            } else if (players.match(player2Pattern)) {
+              let match = players.match(player2Pattern)
+              matches.push({
+                timestamp: timestamp,
+                players: [
+                  {
+                    name: '',
+                    characters: match[1].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  },
+                  {
+                    name: match[2],
+                    characters: match[3].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  }
+                ]
+              })
+            } else if (players.match(charactersOnlyPattern)) {
+              let match = players.match(charactersOnlyPattern)
+              matches.push({
+                timestamp: timestamp,
+                players: [
+                  {
+                    name: '',
+                    characters: match[1].split(/,\s*|\//).map((character) => character.toLowerCase())
+                  },
+                  {
+                    name: '',
+                    characters: match[2].split(/,\s*|\//).map((character) => character.toLowerCase())
                   }
                 ]
               })

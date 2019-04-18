@@ -13,7 +13,7 @@
       </v-layout>
       <v-flex class="text-xs-right" xs1>
         <router-link :to="`edit?v=${ video }`">
-          <v-icon>edit</v-icon>
+          <v-icon color="secondary">edit</v-icon>
         </router-link>
       </v-flex>
     </v-layout>
@@ -40,7 +40,7 @@
       </v-layout>
       <v-flex class="text-xs-right" xs1>
         <a target="_blank" :href="`https://www.youtube.com/watch?v=${video}&t=${timestamp}`">
-          <v-icon>mdi-youtube</v-icon>
+          <v-icon color="secondary">mdi-youtube</v-icon>
         </a>
       </v-flex>
     </v-layout>

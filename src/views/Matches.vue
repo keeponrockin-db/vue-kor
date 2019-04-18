@@ -6,9 +6,9 @@
           max-height="400px"
           transition="slide-y-transition"
         >
-          <v-btn class="ma-1" fab small slot="activator" icon>
-            <v-icon v-if="!selectedCharacters[i - 1][j - 1]">
-              mdi-account-question
+          <v-btn slot="activator" icon>
+            <v-icon color="secondary" v-if="!selectedCharacters[i - 1][j - 1]">
+              mdi-account
             </v-icon>
             <v-avatar size="40px" v-if="selectedCharacters[i - 1][j - 1]">
               <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>
@@ -34,15 +34,12 @@
         <v-select clearable label="Channels" multiple :items="channels" item-text="name" item-value="id" v-model="selectedChannels"/>
         <v-layout align-center>
           <v-text-field clearable label="Title" v-model="title"/>
-          <v-btn icon>
-            <v-icon>search</v-icon>
-          </v-btn>
         </v-layout>
       </v-layout>
       <v-layout justify-center>
         <v-btn icon @click="expandSearch = !expandSearch">
-          <v-icon v-if="!expandSearch">keyboard_arrow_down</v-icon>
-          <v-icon v-if="expandSearch">keyboard_arrow_up</v-icon>
+          <v-icon v-if="!expandSearch" color="secondary">keyboard_arrow_down</v-icon>
+          <v-icon v-if="expandSearch" color="secondary">keyboard_arrow_up</v-icon>
         </v-btn>
       </v-layout>
     </v-layout>

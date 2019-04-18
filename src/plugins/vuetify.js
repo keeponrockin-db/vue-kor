@@ -5,8 +5,8 @@ import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loade
 
 Vue.use(Vuetify, {
   theme: {
-    primary: '#AA00FF',
-    secondary: '#424242',
+    primary: '#673AB7',
+    secondary: '#f44336',
     accent: '#82B1FF',
     error: '#FF5252',
     info: '#2196F3',

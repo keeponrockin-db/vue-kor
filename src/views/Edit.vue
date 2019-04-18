@@ -715,12 +715,14 @@ export default {
       this.error = true
       this.successMessage = ''
       this.success = false
+      this.$vuetify.goTo(0)
     },
     displaySuccess: function (message) {
       this.successMessage = message
       this.success = true
       this.errorMessage = ''
       this.error = false
+      this.$vuetify.goTo(0)
     },
     saveVersion: function (version) {
       this.adminLoading = true
@@ -932,12 +934,14 @@ export default {
       this.adminError = true
       this.adminSuccessMessage = ''
       this.adminSuccess = false
+      this.$vuetify.goTo(0)
     },
     displayAdminSuccess: function (message) {
       this.adminSuccessMessage = message
       this.adminSuccess = true
       this.adminErrorMessage = ''
       this.adminError = false
+      this.$vuetify.goTo(0)
     }
   }
 }

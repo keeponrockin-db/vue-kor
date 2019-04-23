@@ -1,6 +1,6 @@
 {
-  "name": "keep on rockin'",
-  "short_name": "keep on rockin'",
+  "name": "PASSING LINK",
+  "short_name": "PASSING LINK",
   "icons": [
     {
       "src": "./img/icons/android-chrome-192x192.png",
@@ -16,5 +16,5 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#303030",
-  "theme_color": "#AA00FF"
+  "theme_color": "#673AB7"
 }

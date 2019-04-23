@@ -42,8 +42,12 @@ api.get('/matches', (request, response) => {
     .then(({ client, players }) => {
       let query = formMatchQuery(request.query, players)
       let sort = defaultSort
-      let skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
-      let limit = itemsPerPage
+      let skip = 0
+      let limit = 0
+      if (request.query.page !== 'all') {
+        skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
+        limit = itemsPerPage
+      }
       return ({ client, query, sort, skip, limit })
     })
     .then(({ client, query, sort, skip, limit }) => client.db()

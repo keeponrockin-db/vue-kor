@@ -492,7 +492,7 @@ export default {
     },
     loadMatches: function () {
       this.loading = true
-      this.$matches.get({ v: this.video.id }).then((response) => {
+      this.$matches.get({ v: this.video.id, page: 'all' }).then((response) => {
         this.loading = false
         if (response.ok && response.body.matches.length > 0) {
           this.video.version = response.body.matches[0].version

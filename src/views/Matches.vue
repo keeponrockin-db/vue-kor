@@ -8,7 +8,7 @@
         >
           <v-btn slot="activator" icon>
             <v-icon color="secondary" v-if="!selectedCharacters[i - 1][j - 1]">
-              mdi-account
+              mdi-help-circle
             </v-icon>
             <v-avatar size="40px" v-if="selectedCharacters[i - 1][j - 1]">
               <img :src="selectedCharacters[i - 1][j - 1].iconUrl" :alt="selectedCharacters[i - 1][j - 1].name"/>

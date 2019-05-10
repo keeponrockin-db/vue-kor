@@ -196,13 +196,13 @@
               <h3 class="mb-2">Versions</h3>
               <v-layout row align-center>
                 <v-select label="Edit Version"
+                  v-model="editVersion"
                   :items="[{ name: 'New Version' }].concat(versions)"
                   item-text="name"
                   :item-value="(version) => ({
                     name: version.name,
                     newName: version.name
                   })"
-                  v-model="editVersion"
                 />
                 <v-btn icon @click="warn(deleteVersion, editVersion.name,
                   `Are you sure you want to delete version: ${editVersion.name}`)"><v-icon>delete</v-icon>
@@ -217,6 +217,7 @@
               <h3 class="mb-2">Characters</h3>
               <v-layout row align-center>
                 <v-select label="Edit Character"
+                  v-model="editCharacter"
                   :items="[{ name: 'New Character' }].concat(charactersList)"
                   item-text="name"
                   :item-value="(character) => ({
@@ -225,7 +226,6 @@
                     newId: character.id,
                     iconUrl: character.iconUrl
                   })"
-                  v-model="editCharacter"
                 />
                 <v-btn icon @click="warn(deleteCharacter, editCharacter.id,
                   `Are you sure you want to delete character: ${editCharacter.id}`)"><v-icon>delete</v-icon>
@@ -257,11 +257,20 @@
               </v-layout>
               <h3>Players</h3>
               <v-layout row align-center>
-                <v-autocomplete label="Edit Player" :items="aliases" v-model="editPlayer"/>
-                <v-btn icon @click="deletePlayer"><v-icon>delete</v-icon></v-btn>
+                <v-autocomplete label="Edit Player" 
+                  v-model="editPlayer"
+                  :items="[{ name: 'New Player' }].concat(aliases)"
+                  item-text="name"
+                  :item-value="(player) => ({
+                    id: player.id,
+                    name: player.name,
+                    aliases: player.aliases
+                  })"
+                />
+                <v-btn icon @click="warn(deletePlayer, editPlayer.id)"><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout :column="$vuetify.breakpoint.xsOnly">
-                <v-select label="Edit Alias" class="mr-3" clearable/>
+                <v-select label="Edit Alias" class="mr-3" clearable :items="editPlayer.aliases"/>
                 <v-layout row align-center>
                 <v-text-field label="New Alias" clearable/>
                 <v-btn icon @click="saveAlias"><v-icon>save</v-icon></v-btn>
@@ -269,8 +278,17 @@
                 </v-layout>
               </v-layout>
               <v-layout row align-center>
-                <v-autocomplete label="Merge with Player" clearable :items="aliases"/>
-                <v-btn icon @click="warn(mergePlayers)"><v-icon>save</v-icon></v-btn>
+                <v-autocomplete label="Merge with Player" clearable
+                  v-model="mergePlayer"
+                  :items="aliases"
+                  item-text="name"
+                  :item-value="(player) => ({
+                    id: player.id,
+                    name: player.name,
+                    aliases: player.aliases
+                  })"
+                />
+                <v-btn icon @click="warn(mergePlayers, [editPlayer.id, mergePlayer.id])"><v-icon>save</v-icon></v-btn>
               </v-layout>
               <h3>Import Matches</h3>
               <input
@@ -353,6 +371,11 @@ export default {
       file: ''
     },
     editPlayer: {
+      name: '',
+      aliases: [],
+      id: ''
+    },
+    mergePlayer: {
       name: '',
       aliases: [],
       id: ''
@@ -442,12 +465,17 @@ export default {
     },
     loadPlayers: function () {
       this.$players.get().then(response => {
+        this.aliases = []
         response.body.forEach((player) => {
           player.aliases.forEach((alias) => {
-            this.aliases.push(alias)
+            this.aliases.push({
+              id: player._id,
+              name: alias,
+              aliases: player.aliases
+            })
           })
         })
-        this.aliases.sort()
+        this.aliases.sort((a, b) => (a.name > b.name) ? 1 : -1)
       })
     },
     loadVersions: function () {
@@ -852,9 +880,9 @@ export default {
           this.displayAdminError(response.bodyText)
         })
     },
-    deletePlayer: function () {
+    deletePlayer: function (playerId) {
       this.adminLoading = true
-      this.$players.delete()
+      this.$players.delete({id: playerId})
         .then((response) => {
           this.displayAdminSuccess(response.bodyText)
           this.adminLoading = false
@@ -865,13 +893,19 @@ export default {
           this.displayAdminError(response.bodyText)
         })
     },
-    mergePlayers: function () {
+    mergePlayers: function (playerIds) {
       this.adminLoading = true
-      this.$players.merge()
+      this.$players.merge(playerIds)
         .then((response) => {
-          this.displayAdminSuccess(response.bodyText)
-          this.adminLoading = false
           this.loadPlayers()
+          this.editPlayer = response.body
+          this.mergePlayer = {
+            name: '',
+            aliases: [],
+            id: ''
+          }
+          this.displayAdminSuccess('Players have been merged')
+          this.adminLoading = false
         })
         .catch((response) => {
           this.adminLoading = false
@@ -879,6 +913,7 @@ export default {
         })
     },
     saveAlias: function () {
+      console.log(this.editPlayer)
       // TODO: finish
     },
     deleteAlias: function () {

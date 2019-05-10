@@ -1,5 +1,7 @@
 require('dotenv').config()
 
+const _ = require('underscore')
+
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 admin.initializeApp()
@@ -48,6 +50,7 @@ api.get('/matches', (request, response) => {
         skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
         limit = itemsPerPage
       }
+      console.log(JSON.stringify(query))
       return ({ client, query, sort, skip, limit })
     })
     .then(({ client, query, sort, skip, limit }) => client.db()
@@ -585,12 +588,12 @@ api.delete('/players', (request, response) => {
           players: {
             $all: [{ $elemMatch: {
               id: id
-            } }]
+            }}]
           }
         }
         return ({client, id, matchQuery})
       })
-      .then(({ client, id, matchQuery }) => client.db()
+      .then(({client, id, matchQuery}) => client.db()
         .collection('matches')
         .find(matchQuery)
         .toArray()
@@ -599,10 +602,10 @@ api.delete('/players', (request, response) => {
       .then(({client, id, matches}) => {
         if (matches.length === 0) {
           console.log('do delete ' + id)
-          // return client.db()
-          //   .collection('players')
-          //   .deleteOne({ name: id })
-          //   .then(() => ({client, id}))
+          return client.db()
+            .collection('players')
+            .deleteOne({ _id: ObjectId(id) })
+            .then(() => ({client, id}))
         } else {
           throw new Error(`Player: ${id} is used in ${matches.length} matches`)
         }
@@ -616,16 +619,58 @@ api.delete('/players', (request, response) => {
 })
 
 api.post('/players/merge', (request, response) => {
-  // TODO: Implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let players = request.body
+        if (players[0] === players[1]) { response.status(400).send('Players with the same id cannot be merged') }
+        return ({client, players})
+      })
+      .then(({client, players}) => client.db()
+        .collection('players')
+        .find({_id: {$in: [ObjectId(players[0]), ObjectId(players[1])]}})
+        .toArray()
+        .then(players => ({client, players}))
+      )
+      .then(({client, players}) => {
+        let matchQuery = {
+          players: {
+            $all: [{ $elemMatch: {
+              id: players[1]._id
+            }}]
+          }
+        }
+        return ({client, players, matchQuery})
+      })
+      .then(({client, players, matchQuery}) => client.db()
+        .collection('matches')
+        .updateMany(matchQuery, {$set: {'players.$.id': players[0]._id}})
+        .then(() => ({client, players}))
+      )
+      .then(({client, players}) => client.db()
+        .collection('players')
+        .deleteOne({_id: ObjectId(players[1]._id)})
+        .then(() => ({client, players}))
+      )
+      .then(({client, players}) => {
+        let aliases = _.union(players[0].aliases, players[1].aliases)
+        return ({client, players, aliases})
+      })
+      .then(({client, players, aliases}) => client.db()
+        .collection('players')
+        .updateOne(
+          {_id: ObjectId(players[0]._id)},
+          {$set: {aliases: aliases}}
+        )
+        .then(() => ({client, players, aliases}))
+      )
+      .then(({client, players, aliases}) => {
+        client.close()
+        response.status(200).json({id: players[0]._id, name: players[0].name, aliases: aliases})
       })
       .catch(error => response.status(400).send(error.toString()))
   })

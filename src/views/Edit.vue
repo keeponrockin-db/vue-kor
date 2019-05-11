@@ -270,9 +270,12 @@
                 <v-btn icon @click="warn(deletePlayer, editPlayer.id)"><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout :column="$vuetify.breakpoint.xsOnly">
-                <v-select label="Edit Alias" class="mr-3" clearable :items="editPlayer.aliases"/>
+                <v-select label="Edit Alias" class="mr-3" clearable 
+                  v-model="editAlias"
+                  :items="['New Alias'].concat(editPlayer.aliases)"
+                />
                 <v-layout row align-center>
-                <v-text-field label="New Alias" clearable/>
+                <v-text-field label="New Alias" clearable v-model="newAlias"/>
                 <v-btn icon @click="saveAlias"><v-icon>save</v-icon></v-btn>
                 <v-btn icon @click="deleteAlias"><v-icon>delete</v-icon></v-btn>
                 </v-layout>
@@ -375,6 +378,8 @@ export default {
       aliases: [],
       id: ''
     },
+    editAlias: '',
+    newAlias: '',
     mergePlayer: {
       name: '',
       aliases: [],
@@ -913,11 +918,46 @@ export default {
         })
     },
     saveAlias: function () {
-      console.log(this.editPlayer)
-      // TODO: finish
+      this.adminLoading = true
+      if (this.editAlias === 'New Alias' || !this.editAlias) {
+        this.editPlayer.aliases.splice(0, 0, this.newAlias)
+      } else {
+        if (!this.newAlias) {
+          this.newAlias = this.editAlias
+        } else {
+          let aliasIndex = this.editPlayer.aliases.indexOf(this.editAlias)
+          if (~aliasIndex) {
+            this.editPlayer.aliases.splice(aliasIndex, 1, this.newAlias)
+          }
+        }
+      }
+
+      this.$players.save({id: this.editPlayer.id, name: this.newAlias, aliases: this.editPlayer.aliases})
+        .then((response) => {
+          this.displayAdminSuccess(`${this.newAlias} was saved`)
+          this.adminLoading = false
+        })
+        .catch((response) => {
+          this.displayAdminError(response.bodyText)
+          this.adminLoading = false
+        })
     },
     deleteAlias: function () {
-      // TODO: finish
+      this.adminLoading = true
+      let aliasIndex = this.editPlayer.aliases.indexOf(this.editAlias)
+      if (~aliasIndex) {
+        this.editPlayer.aliases.splice(aliasIndex, 1)
+      }
+
+      this.$players.save(this.editPlayer)
+        .then((response) => {
+          this.displayAdminSuccess(`${this.editAlias} was deleted`)
+          this.adminLoading = false
+        })
+        .catch((response) => {
+          this.displayAdminError(response.bodyText)
+          this.adminLoading = false
+        })
     },
     pickImportFile: function () {
       this.$refs.importMatches.click()

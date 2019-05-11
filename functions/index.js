@@ -50,7 +50,6 @@ api.get('/matches', (request, response) => {
         skip = request.query.page > 0 ? (request.query.page - 1) * itemsPerPage : 0
         limit = itemsPerPage
       }
-      console.log(JSON.stringify(query))
       return ({ client, query, sort, skip, limit })
     })
     .then(({ client, query, sort, skip, limit }) => client.db()
@@ -484,6 +483,7 @@ api.put('/characters', (request, response) => {
       .then(({client, character, id}) => {
         if (id !== character.id) {
           // TODO: fix up matches
+          throw Error(`Changing IDs is not implented`)
         }
         return ({client, character, id})
       })
@@ -559,23 +559,41 @@ api.get('/players', (request, response) => {
 })
 
 api.put('/players', (request, response) => {
-  // TODO: Implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => client.db())
-      .then(() => {
-        throw new Error('Not implemented yet')
+      .then(client => {
+        let player = request.body
+        if (!player.id || !player.name || !player.aliases || player.aliases.length < 1) {
+          throw new Error('Incomplete player data')
+        }
+
+        if (player.aliases.length !== _.unique(player.aliases).length) {
+          throw new Error('Duplicate aliases')
+        }
+
+        return ({client, player})
+      })
+      .then(({client, player}) => client.db()
+        .collection('players')
+        .updateOne(
+          {_id: ObjectId(player.id)},
+          {$set: {name: player.name, aliases: player.aliases}}
+        )
+        .then(() => ({client, player}))
+      )
+      .then(({client, player}) => {
+        client.close()
+        response.status(200).send(`${player.name} saved`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
 })
 
 api.delete('/players', (request, response) => {
-  // TODO: Implement this
   if (!request.headers.authorization) {
     response.status(403).send('Unauthorized')
   }
@@ -601,7 +619,6 @@ api.delete('/players', (request, response) => {
       )
       .then(({client, id, matches}) => {
         if (matches.length === 0) {
-          console.log('do delete ' + id)
           return client.db()
             .collection('players')
             .deleteOne({ _id: ObjectId(id) })

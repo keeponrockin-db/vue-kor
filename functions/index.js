@@ -59,7 +59,7 @@ api.get('/matches', (request, response) => {
       .skip(skip)
       .limit(limit)
       .toArray()
-      .then(matches => ({client, matches, query}))
+      .then(matches => ({ client, matches, query }))
     )
     .then(({ client, matches, query }) => deserializeMatches(client, matches)
       .then((matches) => ({ client, matches, query }))
@@ -172,11 +172,11 @@ function deserializeMatches (client, matches) {
         }
         return match
       })
-      return ({matches})
+      return ({ matches })
     })
-    .then(({matches}) => client.db()
+    .then(({ matches }) => client.db()
       .collection('players')
-      .find({_id: {$in: playerIds}})
+      .find({ _id: { $in: playerIds } })
       .toArray()
       .then(players => {
         return matches.map(match => {
@@ -202,12 +202,12 @@ api.put('/matches', (request, response) => {
 
     return connectMongoDB()
       .then(client => {
-        return ({client, matches})
+        return ({ client, matches })
       })
-      .then(({client, matches}) => {
-        return addMatches(client, matches).then(() => ({client}))
+      .then(({ client, matches }) => {
+        return addMatches(client, matches).then(() => ({ client }))
       })
-      .then(({client}) => {
+      .then(({ client }) => {
         client.close()
       })
       .then(() => {
@@ -219,38 +219,38 @@ api.put('/matches', (request, response) => {
 
 function addMatches (client, matches) {
   return checkCharacters(client, matches)
-    .then(({client, matches}) => addMirrorFields(client, matches))
-    .then(({client, matches}) => {
+    .then(({ client, matches }) => addMirrorFields(client, matches))
+    .then(({ client, matches }) => {
       let version = matches[0].version
       if (!version) {
         throw new Error('A version was not selected')
       }
       return client.db()
         .collection('versions')
-        .updateOne({name: version}, {$set: {name: version}}, {upsert: true})
-        .then(() => ({client, matches}))
+        .updateOne({ name: version }, { $set: { name: version } }, { upsert: true })
+        .then(() => ({ client, matches }))
     })
-    .then(({client, matches}) => {
+    .then(({ client, matches }) => {
       let channel = matches[0].channel
       return client.db()
         .collection('channels')
-        .updateOne({id: channel.id}, {$set: channel}, {upsert: true})
-        .then(() => ({client, matches}))
+        .updateOne({ id: channel.id }, { $set: channel }, { upsert: true })
+        .then(() => ({ client, matches }))
     })
-    .then(({client, matches}) => fillPlayerIds(client, matches))
-    .then(({client, matches}) => {
+    .then(({ client, matches }) => fillPlayerIds(client, matches))
+    .then(({ client, matches }) => {
       matches.forEach((match) => {
         if (match.timestamp === '00h00m00s') { match.timestamp = '00h00m01s' }
       })
-      return ({client, matches})
+      return ({ client, matches })
     })
-    .then(({client, matches}) => {
+    .then(({ client, matches }) => {
       return client.db()
         .collection('matches')
         .deleteMany({ video: matches[0].video })
-        .then(() => ({client, matches}))
+        .then(() => ({ client, matches }))
     })
-    .then(({client, matches}) => {
+    .then(({ client, matches }) => {
       return client.db()
         .collection('matches')
         .insert(matches)
@@ -273,7 +273,7 @@ function checkCharacters (client, matches) {
           })
         })
       })
-      return ({client, matches})
+      return ({ client, matches })
     })
 }
 
@@ -289,7 +289,7 @@ function addMirrorFields (client, matches) {
     })
     return match
   })
-  return ({client, matches})
+  return ({ client, matches })
 }
 
 function fillPlayerIds (client, matches) {
@@ -325,9 +325,9 @@ function fillPlayerIds (client, matches) {
           }
         }
       }
-      return ({newPlayers, playerIds})
+      return ({ newPlayers, playerIds })
     })
-    .then(({newPlayers, playerIds}) => {
+    .then(({ newPlayers, playerIds }) => {
       if (newPlayers.length > 0) {
         return client.db()
           .collection('players')
@@ -375,15 +375,15 @@ api.delete('/matches', (request, response) => {
     return connectMongoDB()
       .then(client => {
         let videoId = request.query.videoId
-        return ({client, videoId})
+        return ({ client, videoId })
       })
-      .then(({client, videoId}) => {
+      .then(({ client, videoId }) => {
         return client.db()
           .collection('matches')
           .deleteMany({ video: videoId })
-          .then(() => ({client, videoId}))
+          .then(() => ({ client, videoId }))
       })
-      .then(({client, videoId}) => {
+      .then(({ client, videoId }) => {
         client.close()
         response.status(200).send(`Matches from video: ${videoId} successfully deleted.`)
       })
@@ -403,20 +403,20 @@ api.put('/import', (request, response) => {
 
     return connectMongoDB()
       .then(client => {
-        return ({client, videos})
+        return ({ client, videos })
       })
-      .then(({client, videos}) => {
+      .then(({ client, videos }) => {
         let promiseArray = []
         try {
           videos.forEach(video => {
             promiseArray.push(addMatches(client, video))
           })
-          return Promise.all(promiseArray).then(() => ({client}))
+          return Promise.all(promiseArray).then(() => ({ client }))
         } catch (error) {
           throw error
         }
       })
-      .then(({client}) => {
+      .then(({ client }) => {
         client.close()
       })
       .then(() => {
@@ -455,7 +455,7 @@ api.get('/characters', (request, response) => {
       .toArray()
       .then(characters => ({ client, characters }))
     )
-    .then(({client, characters}) => {
+    .then(({ client, characters }) => {
       client.close()
       return characters
     })
@@ -478,21 +478,21 @@ api.put('/characters', (request, response) => {
 
     return connectMongoDB()
       .then(client => {
-        return ({client, character, id})
+        return ({ client, character, id })
       })
-      .then(({client, character, id}) => {
+      .then(({ client, character, id }) => {
         if (id !== character.id) {
           // TODO: fix up matches
           throw Error(`Changing IDs is not implented`)
         }
-        return ({client, character, id})
+        return ({ client, character, id })
       })
-      .then(({client, character, id}) => client.db()
+      .then(({ client, character, id }) => client.db()
         .collection('characters')
-        .updateOne({id: id}, {$set: character}, {upsert: true})
-        .then(() => ({client, character}))
+        .updateOne({ id: id }, { $set: character }, { upsert: true })
+        .then(() => ({ client, character }))
       )
-      .then(({client, character}) => {
+      .then(({ client, character }) => {
         client.close()
         response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved.`)
       })
@@ -513,28 +513,28 @@ api.delete('/characters', (request, response) => {
           players: {
             $all: [{ $elemMatch: {
               characters: id
-            } }]
+            }}]
           }
         }
-        return ({client, id, matchQuery})
+        return ({ client, id, matchQuery })
       })
       .then(({ client, id, matchQuery }) => client.db()
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({client, id, matches}))
+        .then(matches => ({ client, id, matches }))
       )
-      .then(({client, id, matches}) => {
+      .then(({ client, id, matches }) => {
         if (matches.length === 0) {
           return client.db()
             .collection('characters')
             .deleteOne({ id: id })
-            .then(() => ({client, id}))
+            .then(() => ({ client, id }))
         } else {
           throw new Error(`Character: ${id} is used in ${matches.length} matches`)
         }
       })
-      .then(({client, id}) => {
+      .then(({ client, id }) => {
         client.close()
         response.status(200).send(`Character: ${id} successfully deleted.`)
       })
@@ -548,9 +548,9 @@ api.get('/players', (request, response) => {
       .collection('players')
       .find()
       .toArray()
-      .then(players => ({client, players}))
+      .then(players => ({ client, players }))
     )
-    .then(({client, players}) => {
+    .then(({ client, players }) => {
       client.close()
       return players
     })
@@ -575,17 +575,17 @@ api.put('/players', (request, response) => {
           throw new Error('Duplicate aliases')
         }
 
-        return ({client, player})
+        return ({ client, player })
       })
-      .then(({client, player}) => client.db()
+      .then(({ client, player }) => client.db()
         .collection('players')
         .updateOne(
-          {_id: ObjectId(player.id)},
-          {$set: {name: player.name, aliases: player.aliases}}
+          { _id: ObjectId(player.id) },
+          { $set: { name: player.name, aliases: player.aliases } }
         )
-        .then(() => ({client, player}))
+        .then(() => ({ client, player }))
       )
-      .then(({client, player}) => {
+      .then(({ client, player }) => {
         client.close()
         response.status(200).send(`${player.name} saved`)
       })
@@ -609,25 +609,25 @@ api.delete('/players', (request, response) => {
             }}]
           }
         }
-        return ({client, id, matchQuery})
+        return ({ client, id, matchQuery })
       })
-      .then(({client, id, matchQuery}) => client.db()
+      .then(({ client, id, matchQuery }) => client.db()
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({client, id, matches}))
+        .then(matches => ({ client, id, matches }))
       )
-      .then(({client, id, matches}) => {
+      .then(({ client, id, matches }) => {
         if (matches.length === 0) {
           return client.db()
             .collection('players')
             .deleteOne({ _id: ObjectId(id) })
-            .then(() => ({client, id}))
+            .then(() => ({ client, id }))
         } else {
           throw new Error(`Player: ${id} is used in ${matches.length} matches`)
         }
       })
-      .then(({client, id}) => {
+      .then(({ client, id }) => {
         client.close()
         response.status(200).send(`Player: ${id} successfully deleted.`)
       })
@@ -645,49 +645,41 @@ api.post('/players/merge', (request, response) => {
       .then(client => {
         let players = request.body
         if (players[0] === players[1]) { response.status(400).send('Players with the same id cannot be merged') }
-        return ({client, players})
+        return ({ client, players })
       })
-      .then(({client, players}) => client.db()
+      .then(({ client, players }) => client.db()
         .collection('players')
-        .find({_id: {$in: [ObjectId(players[0]), ObjectId(players[1])]}})
+        .find({ _id: {$in: [ObjectId(players[0]), ObjectId(players[1])]} })
         .toArray()
-        .then(players => ({client, players}))
+        .then(players => ({ client, players }))
       )
-      .then(({client, players}) => {
-        let matchQuery = {
-          players: {
-            $all: [{ $elemMatch: {
-              id: players[1]._id
-            }}]
-          }
-        }
-        return ({client, players, matchQuery})
-      })
-      .then(({client, players, matchQuery}) => client.db()
+      .then(({ client, players }) => client.db()
         .collection('matches')
-        .updateMany(matchQuery, {$set: {'players.$.id': players[0]._id}})
-        .then(() => ({client, players}))
+        .updateOne({ 'players.id': players[1]._id }, {$set: { 'players.$.id': players[0]._id }})
+        .then((result) => ({ client, players, result }))
       )
-      .then(({client, players}) => client.db()
+      /*
+      .then(({ client, players }) => client.db()
         .collection('players')
-        .deleteOne({_id: ObjectId(players[1]._id)})
-        .then(() => ({client, players}))
+        .deleteOne({ _id: ObjectId(players[1]._id)})
+        .then(() => ({ client, players }))
       )
-      .then(({client, players}) => {
+      .then(({ client, players }) => {
         let aliases = _.union(players[0].aliases, players[1].aliases)
-        return ({client, players, aliases})
+        return ({ client, players, aliases })
       })
-      .then(({client, players, aliases}) => client.db()
+      .then(({ client, players, aliases }) => client.db()
         .collection('players')
         .updateOne(
-          {_id: ObjectId(players[0]._id)},
-          {$set: {aliases: aliases}}
+          { _id: ObjectId(players[0]._id)},
+          {$set: { aliases: aliases }}
         )
-        .then(() => ({client, players, aliases}))
+        .then(() => ({ client, players, aliases }))
       )
-      .then(({client, players, aliases}) => {
+      */
+      .then(({ client, players, result }) => {
         client.close()
-        response.status(200).json({id: players[0]._id, name: players[0].name, aliases: aliases})
+        response.status(200).json({ players: players, query: { 'players.id': players[1]._id }, set: {$set: { 'players.$.id': players[0]._id }}, result: result })
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -701,7 +693,7 @@ api.get('/versions', (request, response) => {
       .toArray()
       .then(versions => ({ client, versions }))
     )
-    .then(({client, versions}) => {
+    .then(({ client, versions }) => {
       client.close()
       return versions
     })
@@ -733,9 +725,9 @@ api.put('/versions', (request, response) => {
       .then(({ client, version }) => client.db()
         .collection('versions')
         .updateOne({ name: version.name }, { $set: { name: version.newName } }, { upsert: true })
-        .then(() => ({client, version}))
+        .then(() => ({ client, version }))
       )
-      .then(({client, version}) => {
+      .then(({ client, version }) => {
         client.close()
         if (version.name === 'New Version') {
           response.status(200).send(`Version: ${version.newName} successfully saved.`)
@@ -759,25 +751,25 @@ api.delete('/versions', (request, response) => {
         let matchQuery = {
           version: version
         }
-        return ({client, version, matchQuery})
+        return ({ client, version, matchQuery })
       })
       .then(({ client, version, matchQuery }) => client.db()
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({client, version, matches}))
+        .then(matches => ({ client, version, matches }))
       )
-      .then(({client, version, matches}) => {
+      .then(({ client, version, matches }) => {
         if (matches.length === 0) {
           return client.db()
             .collection('versions')
             .deleteOne({ name: version })
-            .then(() => ({client, version}))
+            .then(() => ({ client, version }))
         } else {
           throw new Error(`Version: ${version} is used in ${matches.length} matches`)
         }
       })
-      .then(({client, version}) => {
+      .then(({ client, version }) => {
         client.close()
         response.status(200).send(`Version: ${version} successfully deleted.`)
       })
@@ -793,7 +785,7 @@ api.get('/channels', (request, response) => {
       .toArray()
       .then(channels => ({ client, channels }))
     )
-    .then(({client, channels}) => {
+    .then(({ client, channels }) => {
       client.close()
       return channels
     })
@@ -841,7 +833,7 @@ api.get('/users', (request, response) => {
       .toArray()
       .then(users => ({ client, users }))
     )
-    .then(({client, users}) => {
+    .then(({ client, users }) => {
       client.close()
       return users
     })
@@ -864,9 +856,9 @@ api.put('/users', (request, response) => {
       .then(({ client, user }) => client.db()
         .collection('users')
         .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
-        .then(() => ({client, user}))
+        .then(() => ({ client, user }))
       )
-      .then(({client, user}) => {
+      .then(({ client, user }) => {
         client.close()
         response.status(200).send(`Version: ${user.email} successfully saved.`)
       })

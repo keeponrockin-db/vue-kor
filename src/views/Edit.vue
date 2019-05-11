@@ -315,7 +315,7 @@
       <v-card>
         <v-card-title class="headline"><v-icon left>warning</v-icon>Warning</v-card-title>
         <v-card-text>
-          {{warningMessage}}
+          {{ warningMessage }}
         </v-card-text>
         <v-card-actions>
           <v-spacer/>
@@ -408,7 +408,7 @@ export default {
             request.headers.set('Authorization', token)
           })
 
-          this.$users.get({uid: user.uid}).then((response) => {
+          this.$users.get({ uid: user.uid }).then((response) => {
             let userData = response.body[0]
             if (userData) {
               this.isAdmin = userData.admin
@@ -680,7 +680,7 @@ export default {
         }
       }
       let newMatch = {
-        players: [{characters: defaultCharacters.slice()}, {characters: defaultCharacters.slice()}]
+        players: [{ characters: defaultCharacters.slice() }, { characters: defaultCharacters.slice() }]
       }
       this.matches.push(newMatch)
     },
@@ -732,7 +732,7 @@ export default {
     },
     deleteMatches: function () {
       this.loading = true
-      this.$matches.delete({videoId: this.video.id})
+      this.$matches.delete({ videoId: this.video.id })
         .then((response) => {
           this.loading = false
           this.displaySuccess(response.bodyText)
@@ -887,7 +887,7 @@ export default {
     },
     deletePlayer: function (playerId) {
       this.adminLoading = true
-      this.$players.delete({id: playerId})
+      this.$players.delete({ id: playerId })
         .then((response) => {
           this.displayAdminSuccess(response.bodyText)
           this.adminLoading = false
@@ -903,13 +903,17 @@ export default {
       this.$players.merge(playerIds)
         .then((response) => {
           this.loadPlayers()
-          this.editPlayer = response.body
+          this.editPlayer = {
+            name: '',
+            aliases: [],
+            id: ''
+          }
           this.mergePlayer = {
             name: '',
             aliases: [],
             id: ''
           }
-          this.displayAdminSuccess('Players have been merged')
+          this.displayAdminSuccess(response.body)
           this.adminLoading = false
         })
         .catch((response) => {
@@ -932,7 +936,7 @@ export default {
         }
       }
 
-      this.$players.save({id: this.editPlayer.id, name: this.newAlias, aliases: this.editPlayer.aliases})
+      this.$players.save({ id: this.editPlayer.id, name: this.newAlias, aliases: this.editPlayer.aliases })
         .then((response) => {
           this.displayAdminSuccess(`${this.newAlias} was saved`)
           this.adminLoading = false

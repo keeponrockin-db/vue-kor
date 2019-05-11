@@ -211,7 +211,7 @@ api.put('/matches', (request, response) => {
         client.close()
       })
       .then(() => {
-        response.status(200).send(`Matches for video: ${matches[0].video} successfully saved.`)
+        response.status(200).send(`Matches for video: ${matches[0].video} successfully saved`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -385,7 +385,7 @@ api.delete('/matches', (request, response) => {
       })
       .then(({ client, videoId }) => {
         client.close()
-        response.status(200).send(`Matches from video: ${videoId} successfully deleted.`)
+        response.status(200).send(`Matches from video: ${videoId} successfully deleted`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -399,7 +399,7 @@ api.put('/import', (request, response) => {
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     let videos = request.body
 
-    if (!auditImport(videos)) { response.status(400).send('Improperly formatted import file.') }
+    if (!auditImport(videos)) { response.status(400).send('Improperly formatted import file') }
 
     return connectMongoDB()
       .then(client => {
@@ -420,7 +420,7 @@ api.put('/import', (request, response) => {
         client.close()
       })
       .then(() => {
-        response.status(200).send('Matches successfully imported.')
+        response.status(200).send('Matches successfully imported')
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -494,7 +494,7 @@ api.put('/characters', (request, response) => {
       )
       .then(({ client, character }) => {
         client.close()
-        response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved.`)
+        response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -510,12 +510,6 @@ api.delete('/characters', (request, response) => {
       .then(client => {
         let id = request.query.id
         let matchQuery = {
-          players: {
-            $all: [{ $elemMatch: {
-              characters: id
-            }}]
-          }
-        }
         return ({ client, id, matchQuery })
       })
       .then(({ client, id, matchQuery }) => client.db()
@@ -536,7 +530,7 @@ api.delete('/characters', (request, response) => {
       })
       .then(({ client, id }) => {
         client.close()
-        response.status(200).send(`Character: ${id} successfully deleted.`)
+        response.status(200).send(`Character: ${id} successfully deleted`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -608,7 +602,6 @@ api.delete('/players', (request, response) => {
               id: id
             }}]
           }
-        }
         return ({ client, id, matchQuery })
       })
       .then(({ client, id, matchQuery }) => client.db()
@@ -629,7 +622,7 @@ api.delete('/players', (request, response) => {
       })
       .then(({ client, id }) => {
         client.close()
-        response.status(200).send(`Player: ${id} successfully deleted.`)
+        response.status(200).send(`Player: ${id} successfully deleted`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -679,7 +672,7 @@ api.post('/players/merge', (request, response) => {
       */
       .then(({ client, players, result }) => {
         client.close()
-        response.status(200).json({ players: players, query: { 'players.id': players[1]._id }, set: {$set: { 'players.$.id': players[0]._id }}, result: result })
+        response.status(200).send(`Players ${players[0].name} and ${players[1].name} were merged`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -730,9 +723,9 @@ api.put('/versions', (request, response) => {
       .then(({ client, version }) => {
         client.close()
         if (version.name === 'New Version') {
-          response.status(200).send(`Version: ${version.newName} successfully saved.`)
+          response.status(200).send(`Version: ${version.newName} successfully saved`)
         } else {
-          response.status(200).send(`Version: ${version.name} successfully renamed to ${version.newName}.`)
+          response.status(200).send(`Version: ${version.name} successfully renamed to ${version.newName}`)
         }
       })
       .catch(error => response.status(400).send(error.toString()))
@@ -771,7 +764,7 @@ api.delete('/versions', (request, response) => {
       })
       .then(({ client, version }) => {
         client.close()
-        response.status(200).send(`Version: ${version} successfully deleted.`)
+        response.status(200).send(`Version: ${version} successfully deleted`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })
@@ -860,7 +853,7 @@ api.put('/users', (request, response) => {
       )
       .then(({ client, user }) => {
         client.close()
-        response.status(200).send(`Version: ${user.email} successfully saved.`)
+        response.status(200).send(`Version: ${user.email} successfully saved`)
       })
       .catch(error => response.status(400).send(error.toString()))
   })

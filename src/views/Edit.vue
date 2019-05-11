@@ -939,6 +939,7 @@ export default {
       this.$players.save({ id: this.editPlayer.id, name: this.newAlias, aliases: this.editPlayer.aliases })
         .then((response) => {
           this.displayAdminSuccess(`${this.newAlias} was saved`)
+          this.newAlias = ''
           this.adminLoading = false
         })
         .catch((response) => {

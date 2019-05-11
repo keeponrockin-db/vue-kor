@@ -259,7 +259,7 @@
               <v-layout row align-center>
                 <v-autocomplete label="Edit Player" 
                   v-model="editPlayer"
-                  :items="[{ name: 'New Player' }].concat(aliases)"
+                  :items="aliases"
                   item-text="name"
                   :item-value="(player) => ({
                     id: player.id,

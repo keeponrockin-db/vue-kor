@@ -509,7 +509,7 @@ api.delete('/characters', (request, response) => {
     return connectMongoDB()
       .then(client => {
         let id = request.query.id
-        let matchQuery = {
+        let matchQuery = { 'players.characters': id }
         return ({ client, id, matchQuery })
       })
       .then(({ client, id, matchQuery }) => client.db()
@@ -596,12 +596,7 @@ api.delete('/players', (request, response) => {
     return connectMongoDB()
       .then(client => {
         let id = request.query.id
-        let matchQuery = {
-          players: {
-            $all: [{ $elemMatch: {
-              id: id
-            }}]
-          }
+        let matchQuery = { 'players.id': id }
         return ({ client, id, matchQuery })
       })
       .then(({ client, id, matchQuery }) => client.db()
@@ -648,14 +643,10 @@ api.post('/players/merge', (request, response) => {
       )
       .then(({ client, players }) => client.db()
         .collection('matches')
-        .updateOne({ 'players.id': players[1]._id }, {$set: { 'players.$.id': players[0]._id }})
-        .then((result) => ({ client, players, result }))
-      )
-      /*
-      .then(({ client, players }) => client.db()
-        .collection('players')
-        .deleteOne({ _id: ObjectId(players[1]._id)})
-        .then(() => ({ client, players }))
+        .updateMany({ 'players.id': players[1]._id.toString() },
+          { $set: { 'players.$[player].id': players[0]._id.toString() } },
+          { arrayFilters: [ { 'player.id': players[1]._id.toString() } ] })
+        .then((results) => ({ client, players }))
       )
       .then(({ client, players }) => {
         let aliases = _.union(players[0].aliases, players[1].aliases)
@@ -664,13 +655,17 @@ api.post('/players/merge', (request, response) => {
       .then(({ client, players, aliases }) => client.db()
         .collection('players')
         .updateOne(
-          { _id: ObjectId(players[0]._id)},
-          {$set: { aliases: aliases }}
+          { _id: ObjectId(players[0]._id) },
+          { $set: { aliases: aliases } }
         )
-        .then(() => ({ client, players, aliases }))
+        .then(() => ({ client, players }))
       )
-      */
-      .then(({ client, players, result }) => {
+      .then(({ client, players }) => client.db()
+        .collection('players')
+        .deleteOne({ _id: ObjectId(players[1]._id) })
+        .then(() => ({ client, players }))
+      )
+      .then(({ client, players }) => {
         client.close()
         response.status(200).send(`Players ${players[0].name} and ${players[1].name} were merged`)
       })

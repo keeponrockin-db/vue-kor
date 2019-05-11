@@ -27,7 +27,7 @@ const defaultSort = {
 
 api.get('/matches', (request, response) => {
   return connectMongoDB()
-    .then(client => {
+    .then((client) => {
       if (request.query.p1 || request.query.p2) {
         // Get player ids from aliases for querying
         let query = formPlayerQuery(request.query)
@@ -35,7 +35,7 @@ api.get('/matches', (request, response) => {
           .collection('players')
           .find(query)
           .toArray()
-          .then(players => ({ client, players }))
+          .then((players) => ({ client, players }))
       } else {
         let players = []
         return ({ client, players })
@@ -59,7 +59,7 @@ api.get('/matches', (request, response) => {
       .skip(skip)
       .limit(limit)
       .toArray()
-      .then(matches => ({ client, matches, query }))
+      .then((matches) => ({ client, matches, query }))
     )
     .then(({ client, matches, query }) => deserializeMatches(client, matches)
       .then((matches) => ({ client, matches, query }))
@@ -74,7 +74,7 @@ api.get('/matches', (request, response) => {
       client.close()
       response.status(200).json({ matches: matches, count: count })
     })
-    .catch(error => response.status(400).send(error.toString()))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 function formPlayerQuery (query) {
@@ -153,7 +153,7 @@ function deserializeMatches (client, matches) {
     .collection('characters')
     .find()
     .toArray()
-    .then(characters => {
+    .then((characters) => {
       let characterLookup = {}
       characters.forEach(character => {
         characterLookup[character.id] = {
@@ -178,7 +178,7 @@ function deserializeMatches (client, matches) {
       .collection('players')
       .find({ _id: { $in: playerIds } })
       .toArray()
-      .then(players => {
+      .then((players) => {
         return matches.map(match => {
           for (let i = 0; i < 2; i++) {
             let player = players.find(player => player._id.equals(ObjectId(match.players[i].id)))
@@ -201,7 +201,7 @@ api.put('/matches', (request, response) => {
     let matches = request.body
 
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         return ({ client, matches })
       })
       .then(({ client, matches }) => {
@@ -213,7 +213,7 @@ api.put('/matches', (request, response) => {
       .then(() => {
         response.status(200).send(`Matches for video: ${matches[0].video} successfully saved`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -311,7 +311,7 @@ function fillPlayerIds (client, matches) {
     .collection('players')
     .find(query)
     .toArray()
-    .then(players => {
+    .then((players) => {
       let playerIds = {}
       let newPlayers = foundPlayers
       for (let i = newPlayers.length - 1; i >= 0; i--) {
@@ -343,7 +343,7 @@ function fillPlayerIds (client, matches) {
               .collection('players')
               .find(query)
               .toArray()
-              .then(players => {
+              .then((players) => {
                 players.forEach(player => {
                   playerIds[player.name] = player._id.toString()
                 })
@@ -354,7 +354,7 @@ function fillPlayerIds (client, matches) {
         return playerIds
       }
     })
-    .then(playerIds => {
+    .then((playerIds) => {
       matches.forEach(match => {
         match.players.forEach((player) => {
           player.id = playerIds[player.name]
@@ -373,7 +373,7 @@ api.delete('/matches', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         let videoId = request.query.videoId
         return ({ client, videoId })
       })
@@ -387,7 +387,7 @@ api.delete('/matches', (request, response) => {
         client.close()
         response.status(200).send(`Matches from video: ${videoId} successfully deleted`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -402,7 +402,7 @@ api.put('/import', (request, response) => {
     if (!auditImport(videos)) { response.status(400).send('Improperly formatted import file') }
 
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         return ({ client, videos })
       })
       .then(({ client, videos }) => {
@@ -422,7 +422,7 @@ api.put('/import', (request, response) => {
       .then(() => {
         response.status(200).send('Matches successfully imported')
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -448,19 +448,19 @@ function auditImport (videos) {
 
 api.get('/characters', (request, response) => {
   return connectMongoDB()
-    .then(client => client.db()
+    .then((client) => client.db()
       .collection('characters')
       .find()
       .sort({ name: 1 })
       .toArray()
-      .then(characters => ({ client, characters }))
+      .then((characters) => ({ client, characters }))
     )
     .then(({ client, characters }) => {
       client.close()
       return characters
     })
-    .then(characters => response.status(200).json(characters))
-    .catch(error => response.status(400).send(error.toString()))
+    .then((characters) => response.status(200).json(characters))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/characters', (request, response) => {
@@ -477,7 +477,7 @@ api.put('/characters', (request, response) => {
     let id = request.body.oldId || request.body.newId
 
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         return ({ client, character, id })
       })
       .then(({ client, character, id }) => {
@@ -496,7 +496,7 @@ api.put('/characters', (request, response) => {
         client.close()
         response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -507,7 +507,7 @@ api.delete('/characters', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         let id = request.query.id
         let matchQuery = { 'players.characters': id }
         return ({ client, id, matchQuery })
@@ -516,7 +516,7 @@ api.delete('/characters', (request, response) => {
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({ client, id, matches }))
+        .then((matches) => ({ client, id, matches }))
       )
       .then(({ client, id, matches }) => {
         if (matches.length === 0) {
@@ -532,24 +532,24 @@ api.delete('/characters', (request, response) => {
         client.close()
         response.status(200).send(`Character: ${id} successfully deleted`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
 api.get('/players', (request, response) => {
   return connectMongoDB()
-    .then(client => client.db()
+    .then((client) => client.db()
       .collection('players')
       .find()
       .toArray()
-      .then(players => ({ client, players }))
+      .then((players) => ({ client, players }))
     )
     .then(({ client, players }) => {
       client.close()
       return players
     })
-    .then(players => response.status(200).json(players))
-    .catch(error => response.status(400).send(error.toString()))
+    .then((players) => response.status(200).json(players))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/players', (request, response) => {
@@ -557,34 +557,35 @@ api.put('/players', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
-    return connectMongoDB()
-      .then(client => {
-        let player = request.body
-        if (!player.id || !player.name || !player.aliases || player.aliases.length < 1) {
-          throw new Error('Incomplete player data')
-        }
+  admin.auth().verifyIdToken(request.headers.authorization)
+    .then((decodedToken) => {
+      return connectMongoDB()
+        .then((client) => {
+          let player = request.body
+          if (!player.id || !player.name || !player.aliases || player.aliases.length < 1) {
+            throw new Error('Incomplete player data')
+          }
 
-        if (player.aliases.length !== _.unique(player.aliases).length) {
-          throw new Error('Duplicate aliases')
-        }
+          if (player.aliases.length !== _.unique(player.aliases).length) {
+            throw new Error('Duplicate aliases')
+          }
 
-        return ({ client, player })
-      })
-      .then(({ client, player }) => client.db()
-        .collection('players')
-        .updateOne(
-          { _id: ObjectId(player.id) },
-          { $set: { name: player.name, aliases: player.aliases } }
+          return ({ client, player })
+        })
+        .then(({ client, player }) => client.db()
+          .collection('players')
+          .updateOne(
+            { _id: ObjectId(player.id) },
+            { $set: { name: player.name, aliases: player.aliases } }
+          )
+          .then(() => ({ client, player }))
         )
-        .then(() => ({ client, player }))
-      )
-      .then(({ client, player }) => {
-        client.close()
-        response.status(200).send(`${player.name} saved`)
-      })
-      .catch(error => response.status(400).send(error.toString()))
-  })
+        .then(({ client, player }) => {
+          client.close()
+          response.status(200).send(`${player.name} saved`)
+        })
+        .catch((error) => response.status(400).send(error.toString()))
+    })
 })
 
 api.delete('/players', (request, response) => {
@@ -594,7 +595,7 @@ api.delete('/players', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         let id = request.query.id
         let matchQuery = { 'players.id': id }
         return ({ client, id, matchQuery })
@@ -603,7 +604,7 @@ api.delete('/players', (request, response) => {
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({ client, id, matches }))
+        .then((matches) => ({ client, id, matches }))
       )
       .then(({ client, id, matches }) => {
         if (matches.length === 0) {
@@ -619,7 +620,7 @@ api.delete('/players', (request, response) => {
         client.close()
         response.status(200).send(`Player: ${id} successfully deleted`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -630,7 +631,7 @@ api.post('/players/merge', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         let players = request.body
         if (players[0] === players[1]) { response.status(400).send('Players with the same id cannot be merged') }
         return ({ client, players })
@@ -639,7 +640,7 @@ api.post('/players/merge', (request, response) => {
         .collection('players')
         .find({ _id: {$in: [ObjectId(players[0]), ObjectId(players[1])]} })
         .toArray()
-        .then(players => ({ client, players }))
+        .then((players) => ({ client, players }))
       )
       .then(({ client, players }) => client.db()
         .collection('matches')
@@ -669,24 +670,24 @@ api.post('/players/merge', (request, response) => {
         client.close()
         response.status(200).send(`Players ${players[0].name} and ${players[1].name} were merged`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
 api.get('/versions', (request, response) => {
   return connectMongoDB()
-    .then(client => client.db()
+    .then((client) => client.db()
       .collection('versions')
       .find()
       .toArray()
-      .then(versions => ({ client, versions }))
+      .then((versions) => ({ client, versions }))
     )
     .then(({ client, versions }) => {
       client.close()
       return versions
     })
-    .then(versions => response.status(200).json(versions))
-    .catch(error => response.status(400).send(error.toString()))
+    .then((versions) => response.status(200).json(versions))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/versions', (request, response) => {
@@ -698,7 +699,7 @@ api.put('/versions', (request, response) => {
     let version = request.body
 
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         return ({ client, version })
       })
       .then(({ client, version }) => {
@@ -723,7 +724,7 @@ api.put('/versions', (request, response) => {
           response.status(200).send(`Version: ${version.name} successfully renamed to ${version.newName}`)
         }
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -734,7 +735,7 @@ api.delete('/versions', (request, response) => {
 
   admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
     return connectMongoDB()
-      .then(client => {
+      .then((client) => {
         let version = request.query.version
         let matchQuery = {
           version: version
@@ -745,7 +746,7 @@ api.delete('/versions', (request, response) => {
         .collection('matches')
         .find(matchQuery)
         .toArray()
-        .then(matches => ({ client, version, matches }))
+        .then((matches) => ({ client, version, matches }))
       )
       .then(({ client, version, matches }) => {
         if (matches.length === 0) {
@@ -761,24 +762,24 @@ api.delete('/versions', (request, response) => {
         client.close()
         response.status(200).send(`Version: ${version} successfully deleted`)
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
 api.get('/channels', (request, response) => {
   return connectMongoDB()
-    .then(client => client.db()
+    .then((client) => client.db()
       .collection('channels')
       .find()
       .toArray()
-      .then(channels => ({ client, channels }))
+      .then((channels) => ({ client, channels }))
     )
     .then(({ client, channels }) => {
       client.close()
       return channels
     })
-    .then(channels => response.status(200).json(channels))
-    .catch(error => response.status(400).send(error.toString()))
+    .then((channels) => response.status(200).json(channels))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 api.get('/youtube-data', (request, response) => {
@@ -805,7 +806,7 @@ api.get('/youtube-data', (request, response) => {
           response.status(400).send('Invalid video')
         }
       })
-      .catch(error => response.status(400).send(error.toString()))
+      .catch((error) => response.status(400).send(error.toString()))
   })
 })
 
@@ -815,18 +816,18 @@ api.get('/users', (request, response) => {
   }
 
   return connectMongoDB()
-    .then(client => client.db()
+    .then((client) => client.db()
       .collection('users')
       .find(request.query)
       .toArray()
-      .then(users => ({ client, users }))
+      .then((users) => ({ client, users }))
     )
     .then(({ client, users }) => {
       client.close()
       return users
     })
-    .then(users => response.status(200).json(users))
-    .catch(error => response.status(400).send(error.toString()))
+    .then((users) => response.status(200).json(users))
+    .catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/users', (request, response) => {
@@ -834,24 +835,25 @@ api.put('/users', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
-    let user = request.body
+  admin.auth().verifyIdToken(request.headers.authorization)
+    .then(() => {
+      let user = request.body
 
-    return connectMongoDB()
-      .then(client => {
-        return ({ client, user })
-      })
-      .then(({ client, user }) => client.db()
-        .collection('users')
-        .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
-        .then(() => ({ client, user }))
-      )
-      .then(({ client, user }) => {
-        client.close()
-        response.status(200).send(`Version: ${user.email} successfully saved`)
-      })
-      .catch(error => response.status(400).send(error.toString()))
-  })
+      return connectMongoDB()
+        .then((client) => {
+          return ({ client, user })
+        })
+        .then(({ client, user }) => client.db()
+          .collection('users')
+          .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
+          .then(() => ({ client, user }))
+        )
+        .then(({ client, user }) => {
+          client.close()
+          response.status(200).send(`Version: ${user.email} successfully saved`)
+        })
+        .catch((error) => response.status(400).send(error.toString()))
+    })
 })
 
 exports.api = functions.https.onRequest(api)

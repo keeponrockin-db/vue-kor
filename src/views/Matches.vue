@@ -170,14 +170,15 @@ export default {
   },
   methods: {
     loadCharacters: function () {
-      this.$characters.get().then(response => {
-        let characters = {}
-        response.body.forEach((character) => {
-          characters[character.id] = character
+      this.$characters.get()
+        .then((response) => {
+          let characters = {}
+          response.body.forEach((character) => {
+            characters[character.id] = character
+          })
+          this.characters = characters
+          this.updateSelectedCharacters()
         })
-        this.characters = characters
-        this.updateSelectedCharacters()
-      })
     },
     updateSelectedCharacters: function () {
       for (let i = 0; i < 2; i++) {
@@ -205,15 +206,16 @@ export default {
       this.$router.push({ path: '/', query: query })
     },
     loadPlayers: function () {
-      this.$players.get().then(response => {
-        response.body.forEach((player) => {
-          player.aliases.forEach((alias) => {
-            this.players.push(alias)
+      this.$players.get()
+        .then((response) => {
+          response.body.forEach((player) => {
+            player.aliases.forEach((alias) => {
+              this.players.push(alias)
+            })
           })
+          this.players.sort()
+          this.updateSelectedPlayers()
         })
-        this.players.sort()
-        this.updateSelectedPlayers()
-      })
     },
     updateSelectedPlayers: function () {
       for (let i = 0; i < 2; i++) {
@@ -225,15 +227,17 @@ export default {
       }
     },
     loadVersions: function () {
-      this.$versions.get().then(response => {
-        this.versions = (response.body).map((version) => version.name)
-      })
+      this.$versions.get()
+        .then((response) => {
+          this.versions = (response.body).map((version) => version.name)
+        })
     },
     loadChannels: function () {
-      this.$channels.get().then(response => {
-        this.channels = response.body
-        this.updateSelectedChannels()
-      })
+      this.$channels.get()
+        .then((response) => {
+          this.channels = response.body
+          this.updateSelectedChannels()
+        })
     },
     updateSelectedChannels: function () {
       if (this.query.channels) {
@@ -242,17 +246,18 @@ export default {
     },
     getMatches: function (query) {
       this.loading = true
-      return this.$matches.get(query).then(response => {
-        this.loading = false
-        if (response.ok) {
-          this.error = false
-          this.matches = response.body.matches
-          this.resultsCount = response.body.count
-        } else {
-          this.error = true
-          this.errorMessage = `${response.status}: ${response.statusText}`
-        }
-      })
+      return this.$matches.get(query)
+        .then((response) => {
+          this.loading = false
+          if (response.ok) {
+            this.error = false
+            this.matches = response.body.matches
+            this.resultsCount = response.body.count
+          } else {
+            this.error = true
+            this.errorMessage = `${response.status}: ${response.statusText}`
+          }
+        })
     },
     onScroll: function (event) {
       this.showToTop = event.currentTarget.scrollY >= 250

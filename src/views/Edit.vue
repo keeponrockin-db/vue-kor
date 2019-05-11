@@ -950,18 +950,19 @@ export default {
       this.adminLoading = true
       let aliasIndex = this.editPlayer.aliases.indexOf(this.editAlias)
       if (~aliasIndex) {
-        this.editPlayer.aliases.splice(aliasIndex, 1)
+        this.editPlayer.aliases.splice(aliasIndex, 1)  
+        this.$players.save(this.editPlayer)
+          .then((response) => {
+            this.displayAdminSuccess(`${this.editAlias} was deleted`)
+            this.adminLoading = false
+          })
+          .catch((response) => {
+            this.displayAdminError(response.bodyText)
+            this.adminLoading = false
+          })
+      } else {
+        this.adminLoading = false
       }
-
-      this.$players.save(this.editPlayer)
-        .then((response) => {
-          this.displayAdminSuccess(`${this.editAlias} was deleted`)
-          this.adminLoading = false
-        })
-        .catch((response) => {
-          this.displayAdminError(response.bodyText)
-          this.adminLoading = false
-        })
     },
     pickImportFile: function () {
       this.$refs.importMatches.click()

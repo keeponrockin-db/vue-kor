@@ -450,16 +450,17 @@ export default {
     signIn: function (providerName) {
       this.loading = true
       this.$firebase.auth().signInWithPopup(this.$providers[providerName])
-        .then(() => {
-          this.loading = false
-        })
-        .catch((error) => {
-          this.loading = false
-          this.displayError(`${error.code}: ${error.message}`)
-        })
+      .then(() => {
+        this.loading = false
+      })
+      .catch((error) => {
+        this.loading = false
+        this.displayError(`${error.code}: ${error.message}`)
+      })
     },
     loadCharacters: function () {
-      this.$characters.get().then(response => {
+      this.$characters.get()
+      .then((response) => {
         let characters = {}
         response.body.forEach((character) => {
           characters[character.id] = character
@@ -469,7 +470,8 @@ export default {
       })
     },
     loadPlayers: function () {
-      this.$players.get().then(response => {
+      return this.$players.get()
+      .then((response) => {
         this.aliases = []
         response.body.forEach((player) => {
           player.aliases.forEach((alias) => {
@@ -481,10 +483,12 @@ export default {
           })
         })
         this.aliases.sort((a, b) => (a.name > b.name) ? 1 : -1)
+        return this.aliases
       })
     },
     loadVersions: function () {
-      this.$versions.get().then(response => {
+      this.$versions.get()
+      .then(response => {
         this.versions = response.body
       })
     },
@@ -507,21 +511,21 @@ export default {
       this.video.title = ''
 
       return this.$youtubeData.get({ v: this.video.id })
-        .then((response) => {
-          this.loading = false
-          this.error = false
-          if (response.ok) {
-            this.video.channel = response.body.channel
-            this.video.date = response.body.date
-            this.video.description = response.body.description
-            this.video.title = response.body.title
-          }
-        })
-        .catch((response) => {
-          this.step = 2
-          this.loading = false
-          this.displayError(`${response.bodyText} (${this.link})`)
-        })
+      .then((response) => {
+        this.loading = false
+        this.error = false
+        if (response.ok) {
+          this.video.channel = response.body.channel
+          this.video.date = response.body.date
+          this.video.description = response.body.description
+          this.video.title = response.body.title
+        }
+      })
+      .catch((response) => {
+        this.step = 2
+        this.loading = false
+        this.displayError(`${response.bodyText} (${this.link})`)
+      })
     },
     loadMatches: function () {
       this.loading = true
@@ -716,32 +720,32 @@ export default {
         })
         this.loading = true
         this.$matches.save(matches)
-          .then((response) => {
-            this.loading = false
-            if (response.ok) {
-              this.displaySuccess(response.bodyText)
-            } else {
-              this.displayError(response.bodyText)
-            }
-          })
-          .catch((response) => {
-            this.loading = false
-            this.displayError(response.bodyText)
-          })
-      }
-    },
-    deleteMatches: function () {
-      this.loading = true
-      this.$matches.delete({ videoId: this.video.id })
         .then((response) => {
           this.loading = false
-          this.displaySuccess(response.bodyText)
-          this.startOver()
+          if (response.ok) {
+            this.displaySuccess(response.bodyText)
+          } else {
+            this.displayError(response.bodyText)
+          }
         })
         .catch((response) => {
           this.loading = false
           this.displayError(response.bodyText)
         })
+      }
+    },
+    deleteMatches: function () {
+      this.loading = true
+      this.$matches.delete({ videoId: this.video.id })
+      .then((response) => {
+        this.loading = false
+        this.displaySuccess(response.bodyText)
+        this.startOver()
+      })
+      .catch((response) => {
+        this.loading = false
+        this.displayError(response.bodyText)
+      })
     },
     displayError: function (message) {
       this.errorMessage = message
@@ -760,32 +764,32 @@ export default {
     saveVersion: function (version) {
       this.adminLoading = true
       this.$versions.save(version)
-        .then(response => {
-          this.adminLoading = false
-          if (response.ok) {
-            this.displayAdminSuccess(response.bodyText)
-            this.loadVersions()
-          } else {
-            this.displayAdminError(response.bodyText)
-          }
-        })
-        .catch((response) => {
-          this.adminLoading = false
+      .then(response => {
+        this.adminLoading = false
+        if (response.ok) {
+          this.displayAdminSuccess(response.bodyText)
+          this.loadVersions()
+        } else {
           this.displayAdminError(response.bodyText)
-        })
+        }
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     deleteVersion: function (versionName) {
       this.adminLoading = true
       this.$versions.delete({ version: versionName })
-        .then((response) => {
-          this.adminLoading = false
-          this.displayAdminSuccess(response.bodyText)
-          this.loadVersions()
-        })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+      .then((response) => {
+        this.adminLoading = false
+        this.displayAdminSuccess(response.bodyText)
+        this.loadVersions()
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     pickCharacterIcon: function () {
       this.$refs.characterIcon.click()
@@ -853,78 +857,78 @@ export default {
       let storageRef = storage.ref()
       let iconRef = storageRef.child('characterIcons').child(`${id}.${fileExtension}`)
       return iconRef.put(file)
-        .then((snapshot) => {
-          return snapshot.ref.getDownloadURL().then((url) => {
-            return url
-          })
+      .then((snapshot) => {
+        return snapshot.ref.getDownloadURL().then((url) => {
+          return url
         })
+      })
     },
     deleteCharacter: function (characterId) {
       this.adminLoading = true
       this.$characters.delete({ id: characterId })
-        .then((response) => {
-          this.adminLoading = false
-          this.displayAdminSuccess(response.bodyText)
-          this.loadCharacters()
-        })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+      .then((response) => {
+        this.adminLoading = false
+        this.displayAdminSuccess(response.bodyText)
+        this.loadCharacters()
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     savePlayer: function () {
       this.adminLoading = true
       this.$players.save()
-        .then((response) => {
-          this.adminLoading = false
-          this.displayAdminSuccess(response.bodyText)
-          this.loadPlayers()
-        })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+      .then((response) => {
+        this.adminLoading = false
+        this.displayAdminSuccess(response.bodyText)
+        this.loadPlayers()
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     deletePlayer: function (playerId) {
       this.adminLoading = true
       this.$players.delete({ id: playerId })
-        .then((response) => {
-          this.displayAdminSuccess(response.bodyText)
-          this.adminLoading = false
-          this.loadPlayers()
-        })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+      .then((response) => {
+        this.displayAdminSuccess(response.bodyText)
+        this.adminLoading = false
+        this.loadPlayers()
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     mergePlayers: function (playerIds) {
       this.adminLoading = true
       this.$players.merge(playerIds)
-        .then((response) => {
-          this.loadPlayers()
-          this.editPlayer = {
-            name: '',
-            aliases: [],
-            id: ''
+      .then((response) => {
+        this.loadPlayers()
+        .then((players) => {
+          let mergedPlayer = players.find((player) => player.id === playerIds[0])
+          if (!mergedPlayer) {
+            mergedPlayer = players.find((player) => player.id === playerIds[1])
           }
-          this.mergePlayer = {
-            name: '',
-            aliases: [],
-            id: ''
-          }
-          this.displayAdminSuccess(response.body)
-          this.adminLoading = false
+
+          this.editPlayer = mergedPlayer
         })
-        .catch((response) => {
-          this.adminLoading = false
-          this.displayAdminError(response.bodyText)
-        })
+        this.displayAdminSuccess(response.body)
+        this.adminLoading = false
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     saveAlias: function () {
       this.adminLoading = true
       if (this.editAlias === 'New Alias' || !this.editAlias) {
-        this.editPlayer.aliases.splice(0, 0, this.newAlias)
+        if (this.newAlias) {
+          this.editPlayer.aliases.splice(0, 0, this.newAlias)
+        }
       } else {
         if (!this.newAlias) {
           this.newAlias = this.editAlias
@@ -937,14 +941,14 @@ export default {
       }
 
       this.$players.save({ id: this.editPlayer.id, name: this.newAlias, aliases: this.editPlayer.aliases })
-        .then((response) => {
-          this.displayAdminSuccess(`${this.newAlias} was saved`)
-          this.adminLoading = false
-        })
-        .catch((response) => {
-          this.displayAdminError(response.bodyText)
-          this.adminLoading = false
-        })
+      .then((response) => {
+        this.displayAdminSuccess(`${this.newAlias} was saved`)
+        this.adminLoading = false
+      })
+      .catch((response) => {
+        this.displayAdminError(response.bodyText)
+        this.adminLoading = false
+      })
     },
     deleteAlias: function () {
       this.adminLoading = true
@@ -954,14 +958,14 @@ export default {
         if (this.editPlayer.aliases.length > 0) {
           this.editPlayer.name = this.editPlayer.aliases[0]
           this.$players.save(this.editPlayer)
-            .then((response) => {
-              this.displayAdminSuccess(`${this.editAlias} was deleted`)
-              this.adminLoading = false
-            })
-            .catch((response) => {
-              this.displayAdminError(response.bodyText)
-              this.adminLoading = false
-            })
+          .then((response) => {
+            this.displayAdminSuccess(`${this.editAlias} was deleted`)
+            this.adminLoading = false
+          })
+          .catch((response) => {
+            this.displayAdminError(response.bodyText)
+            this.adminLoading = false
+          })
         } else {
           this.displayAdminError('Cannot delete a player\'s only alias')
           this.adminLoading = false
@@ -987,18 +991,18 @@ export default {
     saveImport () {
       this.adminLoading = true
       this.$import.save(this.importMatches)
-        .then((response) => {
-          this.adminLoading = false
-          if (response.ok) {
-            this.displayAdminSuccess(response.bodyText)
-          } else {
-            this.displayAdminError(response.bodyText)
-          }
-        })
-        .catch((response) => {
-          this.adminLoading = false
+      .then((response) => {
+        this.adminLoading = false
+        if (response.ok) {
+          this.displayAdminSuccess(response.bodyText)
+        } else {
           this.displayAdminError(response.bodyText)
-        })
+        }
+      })
+      .catch((response) => {
+        this.adminLoading = false
+        this.displayAdminError(response.bodyText)
+      })
     },
     warn: function (action, args, message) {
       this.warning = true

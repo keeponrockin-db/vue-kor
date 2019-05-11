@@ -950,16 +950,22 @@ export default {
       this.adminLoading = true
       let aliasIndex = this.editPlayer.aliases.indexOf(this.editAlias)
       if (~aliasIndex) {
-        this.editPlayer.aliases.splice(aliasIndex, 1)  
-        this.$players.save(this.editPlayer)
-          .then((response) => {
-            this.displayAdminSuccess(`${this.editAlias} was deleted`)
-            this.adminLoading = false
-          })
-          .catch((response) => {
-            this.displayAdminError(response.bodyText)
-            this.adminLoading = false
-          })
+        this.editPlayer.aliases.splice(aliasIndex, 1)
+        if (this.editPlayer.aliases.length > 0) {
+          this.editPlayer.name = this.editPlayer.aliases[0]
+          this.$players.save(this.editPlayer)
+            .then((response) => {
+              this.displayAdminSuccess(`${this.editAlias} was deleted`)
+              this.adminLoading = false
+            })
+            .catch((response) => {
+              this.displayAdminError(response.bodyText)
+              this.adminLoading = false
+            })
+        } else {
+          this.displayAdminError('Cannot delete a player\'s only alias')
+          this.adminLoading = false
+        }
       } else {
         this.adminLoading = false
       }

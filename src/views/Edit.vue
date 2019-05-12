@@ -257,7 +257,7 @@
               </v-layout>
               <h3>Players</h3>
               <v-layout row align-center>
-                <v-autocomplete label="Edit Player" 
+                <v-autocomplete label="Edit Player"
                   v-model="editPlayer"
                   :items="aliases"
                   item-text="name"
@@ -270,8 +270,7 @@
                 <v-btn icon @click="warn(deletePlayer, editPlayer.id)"><v-icon>delete</v-icon></v-btn>
               </v-layout>
               <v-layout :column="$vuetify.breakpoint.xsOnly">
-                <v-select label="Edit Alias" class="mr-3" clearable 
-                  v-model="editAlias"
+                <v-select label="Edit Alias" class="mr-3" clearable v-model="editAlias"
                   :items="['New Alias'].concat(editPlayer.aliases)"
                 />
                 <v-layout row align-center>
@@ -386,7 +385,7 @@ export default {
       id: ''
     },
     importMatches: {},
-    importFilename: "No file selected",
+    importFilename: 'No file selected',
     warning: false,
     warningMessage: '',
     action: function () {},
@@ -822,24 +821,25 @@ export default {
         return this.uploadCharacterIcon(this.newCharacterIcon.filename,
           this.newCharacterIcon.file,
           this.editCharacter.newId,
-          this.editCharacter.iconUrl)
-            .then((url) => {
-              character.iconUrl = url
-              return this.$characters.save(character)
-                .then((response) => {
-                  this.adminLoading = false
-                  if (response.ok) {
-                    this.displayAdminSuccess(response.bodyText)
-                    this.loadCharacters()
-                  } else {
-                    this.displayAdminError(response.bodyText)
-                  }
-                })
-            })
-            .catch((response) => {
-              this.adminLoading = false
-              this.displayAdminError(response.bodyText)
-            })
+          this.editCharacter.iconUrl
+        )
+          .then((url) => {
+            character.iconUrl = url
+            return this.$characters.save(character)
+              .then((response) => {
+                this.adminLoading = false
+                if (response.ok) {
+                  this.displayAdminSuccess(response.bodyText)
+                  this.loadCharacters()
+                } else {
+                  this.displayAdminError(response.bodyText)
+                }
+              })
+          })
+          .catch((response) => {
+            this.adminLoading = false
+            this.displayAdminError(response.bodyText)
+          })
       } catch (error) {
         this.adminLoading = false
         this.displayAdminError(error.message)

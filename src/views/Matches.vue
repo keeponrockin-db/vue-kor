@@ -81,6 +81,7 @@
         small fab
         fixed bottom right
         color="primary"
+        :light="$config.lightPrimary"
         v-show="showToTop"
       >
         <v-icon>keyboard_arrow_up</v-icon>
@@ -154,7 +155,7 @@ export default {
     title: function (title) {
       let query = Object.assign({}, this.query)
       query.title = title
-      this.$router.push( { path: '/', query: query })
+      this.$router.push({ path: '/', query: query })
     },
     page: function (page) {
       let query = Object.assign({}, this.query)

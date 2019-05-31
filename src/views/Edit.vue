@@ -119,7 +119,7 @@
                     <v-combobox :label="`Player ${j}`"
                       clearable
                       placeholder="Unknown Player"
-                      :items="aliases"
+                      :items="aliases.map(alias => alias.name)"
                       v-model="match.players[j - 1].name"
                     />
                   </v-layout>
@@ -716,6 +716,8 @@ export default {
           match.version = this.video.version
           return match
         })
+        console.log(matches)
+        /*
         this.loading = true
         this.$matches.save(matches)
           .then((response) => {
@@ -730,6 +732,7 @@ export default {
             this.loading = false
             this.displayError(response.bodyText)
           })
+          */
       }
     },
     deleteMatches: function () {

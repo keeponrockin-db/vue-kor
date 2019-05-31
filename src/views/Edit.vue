@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-stepper class="elevation-0" v-model="step">
+    <v-stepper class="elevation-0" v-model="step" flat>
       <v-stepper-items>
         <v-stepper-header>
           <v-stepper-step :complete="step > 1" step="1">Sign In</v-stepper-step>

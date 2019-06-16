@@ -663,9 +663,10 @@ export default {
         match.players.forEach((player) => {
           characters.push(player.characters.join('/'))
         })
-        newDescription +=
-          `${match.timestamp} ${match.players[0].name} (${characters[0]}) vs` +
-          ` ${match.players[1].name} (${characters[1]})\n`
+        let timestamp = match.timestamp ? match.timestamp : '00h00m00s'
+        let player1 = match.players[0].name ? `${match.players[0].name} (${characters[0]})` : characters[0]
+        let player2 = match.players[1].name ? `${match.players[1].name} (${characters[1]})` : characters[1]
+        newDescription += `${timestamp} ${player1} vs ${player2}\n`
       })
       this.manualEntry = newDescription
     },
@@ -716,8 +717,6 @@ export default {
           match.version = this.video.version
           return match
         })
-        console.log(matches)
-        /*
         this.loading = true
         this.$matches.save(matches)
           .then((response) => {
@@ -732,7 +731,6 @@ export default {
             this.loading = false
             this.displayError(response.bodyText)
           })
-          */
       }
     },
     deleteMatches: function () {

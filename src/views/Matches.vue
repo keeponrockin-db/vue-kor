@@ -137,6 +137,7 @@ export default {
           delete query[`p${i + 1}`]
         }
       }
+      delete query.page
       this.$router.push({ path: '/', query: query })
     },
     '$route.query': function (query) {
@@ -145,16 +146,19 @@ export default {
     selectedVersions: function (versions) {
       let query = Object.assign({}, this.query)
       query.versions = versions.filter((version) => version).join(',')
+      delete query.page
       this.$router.push({ path: '/', query: query })
     },
     selectedChannels: function (channels) {
       let query = Object.assign({}, this.query)
       query.channels = channels.filter((channel) => channel).join(',')
+      delete query.page
       this.$router.push({ path: '/', query: query })
     },
     title: function (title) {
       let query = Object.assign({}, this.query)
       query.title = title
+      delete query.page
       this.$router.push({ path: '/', query: query })
     },
     page: function (page) {
@@ -204,6 +208,7 @@ export default {
       }
       let query = Object.assign({}, this.query)
       query[`p${playerNumber}chars`] = characterQuery
+      delete query.page
       this.$router.push({ path: '/', query: query })
     },
     loadPlayers: function () {

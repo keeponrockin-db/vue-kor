@@ -403,9 +403,22 @@ api.put('/import', (request, response) => {
 
     return connectMongoDB()
       .then((client) => {
-        return ({ client, videos })
+        let matches = []
+        videos.forEach(video => {
+          video.forEach(match => {
+            let newMatch = {
+              players: [{
+                name: match.players[0].name
+              }, {
+                name: match.players[1].name
+              }]
+            }
+            matches.push(newMatch)
+          })
+        })
+        return fillPlayerIds(client, matches)
       })
-      .then(({ client, videos }) => {
+      .then(({ client }) => {
         let promiseArray = []
         try {
           videos.forEach(video => {

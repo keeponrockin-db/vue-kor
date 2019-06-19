@@ -21,7 +21,7 @@ const axios = require('axios')
 const itemsPerPage = 50
 const defaultSort = {
   date: -1,
-  title: 1,
+  video: 1,
   timestamp: 1
 }
 

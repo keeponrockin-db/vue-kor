@@ -299,6 +299,7 @@ function fillPlayerIds (client, matches) {
       if (!player.name) {
         player.name = 'Unknown Player'
       }
+      player.name = player.name.trim()
       if (!foundPlayers.includes(player.name)) {
         foundPlayers.push(player.name)
       }

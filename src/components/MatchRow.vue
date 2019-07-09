@@ -8,7 +8,7 @@
         <v-flex class="cutoff">
           {{ date }} |
           <router-link :to="{ query: { version }}">{{ version }}</router-link> |
-          <router-link :to="{ query: { channel: channel.id }}" :title="channel.name">{{ channel.name }}</router-link>
+          <router-link :to="{ query: { channels: channel.id }}" :title="channel.name">{{ channel.name }}</router-link>
         </v-flex>
       </v-layout>
       <v-flex class="text-xs-right" xs1>

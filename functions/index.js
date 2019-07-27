@@ -197,7 +197,7 @@ api.put('/matches', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     let matches = request.body
 
     return connectMongoDB()
@@ -214,7 +214,7 @@ api.put('/matches', (request, response) => {
         response.status(200).send(`Matches for video: ${matches[0].video} successfully saved`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 function addMatches (client, matches) {
@@ -372,7 +372,7 @@ api.delete('/matches', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     return connectMongoDB()
       .then((client) => {
         let videoId = request.query.videoId
@@ -389,7 +389,7 @@ api.delete('/matches', (request, response) => {
         response.status(200).send(`Matches from video: ${videoId} successfully deleted`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/import', (request, response) => {
@@ -397,7 +397,7 @@ api.put('/import', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     let videos = request.body
 
     if (!auditImport(videos)) { response.status(400).send('Improperly formatted import file') }
@@ -437,7 +437,7 @@ api.put('/import', (request, response) => {
         response.status(200).send('Matches successfully imported')
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 function auditImport (videos) {
@@ -511,7 +511,7 @@ api.put('/characters', (request, response) => {
         response.status(200).send(`Character: ${character.name} (${character.id}) successfully saved`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.delete('/characters', (request, response) => {
@@ -519,7 +519,7 @@ api.delete('/characters', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     return connectMongoDB()
       .then((client) => {
         let id = request.query.id
@@ -547,7 +547,7 @@ api.delete('/characters', (request, response) => {
         response.status(200).send(`Character: ${id} successfully deleted`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.get('/players', (request, response) => {
@@ -571,35 +571,34 @@ api.put('/players', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization)
-    .then((decodedToken) => {
-      return connectMongoDB()
-        .then((client) => {
-          let player = request.body
-          if (!player.id || !player.name || !player.aliases || player.aliases.length < 1) {
-            throw new Error('Incomplete player data')
-          }
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
+    return connectMongoDB()
+      .then((client) => {
+        let player = request.body
+        if (!player.id || !player.name || !player.aliases || player.aliases.length < 1) {
+          throw new Error('Incomplete player data')
+        }
 
-          if (player.aliases.length !== _.unique(player.aliases).length) {
-            throw new Error('Duplicate aliases')
-          }
+        if (player.aliases.length !== _.unique(player.aliases).length) {
+          throw new Error('Duplicate aliases')
+        }
 
-          return ({ client, player })
-        })
-        .then(({ client, player }) => client.db()
-          .collection('players')
-          .updateOne(
-            { _id: ObjectId(player.id) },
-            { $set: { name: player.name, aliases: player.aliases } }
-          )
-          .then(() => ({ client, player }))
+        return ({ client, player })
+      })
+      .then(({ client, player }) => client.db()
+        .collection('players')
+        .updateOne(
+          { _id: ObjectId(player.id) },
+          { $set: { name: player.name, aliases: player.aliases } }
         )
-        .then(({ client, player }) => {
-          client.close()
-          response.status(200).send(`${player.name} saved`)
-        })
-        .catch((error) => response.status(400).send(error.toString()))
-    })
+        .then(() => ({ client, player }))
+      )
+      .then(({ client, player }) => {
+        client.close()
+        response.status(200).send(`${player.name} saved`)
+      })
+      .catch((error) => response.status(400).send(error.toString()))
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.delete('/players', (request, response) => {
@@ -607,7 +606,7 @@ api.delete('/players', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     return connectMongoDB()
       .then((client) => {
         let id = request.query.id
@@ -635,7 +634,7 @@ api.delete('/players', (request, response) => {
         response.status(200).send(`Player: ${id} successfully deleted`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.post('/players/merge', (request, response) => {
@@ -643,7 +642,7 @@ api.post('/players/merge', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     return connectMongoDB()
       .then((client) => {
         let players = request.body
@@ -685,7 +684,7 @@ api.post('/players/merge', (request, response) => {
         response.status(200).send(`Players ${players[0].name} and ${players[1].name} were merged`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.get('/versions', (request, response) => {
@@ -709,7 +708,7 @@ api.put('/versions', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     let version = request.body
 
     return connectMongoDB()
@@ -739,7 +738,7 @@ api.put('/versions', (request, response) => {
         }
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.delete('/versions', (request, response) => {
@@ -747,7 +746,7 @@ api.delete('/versions', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     return connectMongoDB()
       .then((client) => {
         let version = request.query.version
@@ -777,7 +776,7 @@ api.delete('/versions', (request, response) => {
         response.status(200).send(`Version: ${version} successfully deleted`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.get('/channels', (request, response) => {
@@ -801,7 +800,7 @@ api.get('/youtube-data', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization).then((decodedToken) => {
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
     let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${request.query.v}&key=${youtubeKey}`
     return axios.get(url)
       .then((youtube) => {
@@ -849,25 +848,24 @@ api.put('/users', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  admin.auth().verifyIdToken(request.headers.authorization)
-    .then(() => {
-      let user = request.body
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
+    let user = request.body
 
-      return connectMongoDB()
-        .then((client) => {
-          return ({ client, user })
-        })
-        .then(({ client, user }) => client.db()
-          .collection('users')
-          .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
-          .then(() => ({ client, user }))
-        )
-        .then(({ client, user }) => {
-          client.close()
-          response.status(200).send(`Version: ${user.email} successfully saved`)
-        })
-        .catch((error) => response.status(400).send(error.toString()))
-    })
+    return connectMongoDB()
+      .then((client) => {
+        return ({ client, user })
+      })
+      .then(({ client, user }) => client.db()
+        .collection('users')
+        .updateOne({ uid: user.uid }, { $set: { email: user.email } }, { upsert: true })
+        .then(() => ({ client, user }))
+      )
+      .then(({ client, user }) => {
+        client.close()
+        response.status(200).send(`Version: ${user.email} successfully saved`)
+      })
+      .catch((error) => response.status(400).send(error.toString()))
+  })
 })
 
 exports.api = functions.https.onRequest(api)

@@ -561,9 +561,15 @@ export default {
     startOver: function () {
       this.step = 2
       this.link = ''
-      this.title = ''
-      this.channel = ''
-      this.date = ''
+      this.video = {
+        id: '',
+        title: '',
+        channel: '',
+        date: '',
+        description: '',
+        version: ''
+      }
+      this.matches = []
       this.$router.replace('edit')
     },
     parse: function () {

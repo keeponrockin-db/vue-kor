@@ -820,7 +820,7 @@ api.get('/youtube-data', (request, response) => {
         }
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.get('/users', (request, response) => {
@@ -828,19 +828,21 @@ api.get('/users', (request, response) => {
     response.status(403).send('Unauthorized')
   }
 
-  return connectMongoDB()
-    .then((client) => client.db()
-      .collection('users')
-      .find(request.query)
-      .toArray()
-      .then((users) => ({ client, users }))
-    )
-    .then(({ client, users }) => {
-      client.close()
-      return users
-    })
-    .then((users) => response.status(200).json(users))
-    .catch((error) => response.status(400).send(error.toString()))
+  admin.auth().verifyIdToken(request.headers.authorization).then(() => {
+    return connectMongoDB()
+      .then((client) => client.db()
+        .collection('users')
+        .find(request.query)
+        .toArray()
+        .then((users) => ({ client, users }))
+      )
+      .then(({ client, users }) => {
+        client.close()
+        return users
+      })
+      .then((users) => response.status(200).json(users))
+      .catch((error) => response.status(400).send(error.toString()))
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 api.put('/users', (request, response) => {
@@ -865,7 +867,7 @@ api.put('/users', (request, response) => {
         response.status(200).send(`Version: ${user.email} successfully saved`)
       })
       .catch((error) => response.status(400).send(error.toString()))
-  })
+  }).catch((error) => response.status(400).send(error.toString()))
 })
 
 exports.api = functions.https.onRequest(api)

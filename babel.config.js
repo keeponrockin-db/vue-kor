@@ -3,6 +3,7 @@ module.exports = {
     [
       '@vue/app',
       {
+        'corejs': 3,
         'useBuiltIns': 'entry'
       }
     ]

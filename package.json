@@ -9,8 +9,12 @@
     "dev": "vue-cli-service serve"
   },
   "dependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/register": "^7.5.5",
+    "core-js": "^3.1.4",
     "dotenv": "^6.0.0",
-    "firebase": "^5.3.1",
+    "firebase": "^6.3.3",
     "register-service-worker": "^1.0.0",
     "vue": "^2.5.16",
     "vue-resource": "^1.5.1",
@@ -18,13 +22,12 @@
     "vuetify": "^1.0.19"
   },
   "devDependencies": {
-    "@babel/polyfill": "^7.0.0-beta.49",
     "@mdi/font": "^3.6.95",
-    "@vue/cli-plugin-babel": "^3.0.0-beta.15",
-    "@vue/cli-plugin-eslint": "^3.0.0-beta.15",
+    "@vue/cli-plugin-babel": "^3.9.2",
+    "@vue/cli-plugin-eslint": "^3.9.2",
     "@vue/cli-plugin-pwa": "^3.1.2",
-    "@vue/cli-service": "^3.0.0-beta.15",
-    "@vue/eslint-config-standard": "^3.0.0-rc.3",
+    "@vue/cli-service": "^3.9.3",
+    "@vue/eslint-config-standard": "^4.0.0",
     "lint-staged": "^6.0.0",
     "node-sass": "^4.9.0",
     "sass-loader": "^7.0.1",

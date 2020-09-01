@@ -2,7 +2,7 @@
   <v-app :dark="$config.dark">
     <v-content>
       <v-layout column align-center>
-        <v-toolbar dense flat :light="$config.lightPrimary" color="primary">
+        <v-toolbar dense flat :light="$config.lightPrimary" :dark="!$config.lightPrimary" color="primary">
           <router-link to="/">
             <img v-if="$config.lightPrimary" src="img/icons/logo-icon-black.svg">
             <img v-if="!$config.lightPrimary" src="img/icons/logo-icon-white.svg">

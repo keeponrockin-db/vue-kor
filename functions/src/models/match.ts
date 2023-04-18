@@ -16,7 +16,9 @@ export class PartialMatch {
     this.date = match.date;
     this.version = match.version;
     this.timestamp = match.timestamp;
-    this.players = match.players.map((player: PartialMatchPlayer) => new PartialMatchPlayer(player));
+    this.players = match.players.map(
+      (player: PartialMatchPlayer) => new PartialMatchPlayer(player)
+    );
   }
 }
 
@@ -46,11 +48,20 @@ export class Match {
     this.date = match.date;
     this.version = match.version;
     this.timestamp = match.timestamp;
-    this.players = match.players.map((matchPlayer: PartialMatchPlayer) => new MatchPlayer({
-      characters: matchPlayer.characters.map((matchCharacter: string) => new Character(characters.find(character => character.id === matchCharacter))),
-      name: players.find((player: Player) => player._id.equals(matchPlayer.id))?.name,
-      aliases: players.find((player: Player) => player._id.equals(matchPlayer.id))?.aliases
-    }));
+    this.players = match.players.map(
+      (matchPlayer: PartialMatchPlayer) => new MatchPlayer({
+        characters: matchPlayer.characters.map(
+          (matchCharacter: string) => new Character(
+            characters.find((character) => character.id === matchCharacter)
+          )
+        ),
+        name: players.find(
+          (player: Player) => player._id.equals(matchPlayer.id)
+        )?.name,
+        aliases: players.find(
+          (player: Player) => player._id.equals(matchPlayer.id)
+        )?.aliases,
+      }));
   }
 }
 

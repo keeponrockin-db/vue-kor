@@ -1,7 +1,7 @@
-export * from './models/channel';
-export * from './models/character';
-export * from './models/match';
-export * from './models/matchquery';
-export * from './models/player';
-export * from './models/version';
-export * from './models/youtubedata';
+export { Channel } from "./models/channel";
+export { Character } from "./models/character";
+export { Player } from "./models/player";
+export { Match, PartialMatch } from "./models/match";
+export { MatchQuery } from "./models/matchquery";
+export { Version } from "./models/version";
+export { YoutubeData } from "./models/youtubedata";

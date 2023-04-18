@@ -31,3 +31,5 @@ src/config\.js
 *.log
 
 \.firebase/hosting\.ZGlzdA\.cache
+
+functions/lib/

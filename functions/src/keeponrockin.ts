@@ -228,6 +228,15 @@ export class Keeponrockin {
           new Match(match, characters, players)));
   }
 
+  public getMatchCount(query: ParsedQs): Promise<number> {
+    return this.getPlayers()
+      .then((players: Player[]) => {
+        return this.mongoClient.db(this.dbName)
+          .collection("matches")
+          .countDocuments(new MatchQuery(query, players).getFilter());
+      });
+  }
+
   private _getPartialMatches(query: ParsedQs,
     players: Player[]): Promise<PartialMatch[]> {
     const sort = this.defaultSort;

@@ -20,10 +20,11 @@ initializeApp();
 
 const mongoDbUri = String(process.env.MONGODB);
 const youtubeKey = String(process.env.YOUTUBEKEY);
+const databaseName = String(process.env.DATABASENAME);
 const api = express();
 api.use(cors({ origin: true }));
 
-const context = new Keeponrockin(mongoDbUri, "keeponrockin");
+const context = new Keeponrockin(mongoDbUri, databaseName);
 
 api.get("/channels", (request: Request, response: Response) => {
   context.getChannels().then((channels: Channel[]) => {
@@ -131,8 +132,11 @@ api.get("/youtube-data", (request: Request, response: Response) => {
 });
 
 api.get("/matches", (request: Request, response: Response) => {
-  context.getMatches(request.query).then((matches: Match[]) => {
-    response.status(200).json(matches);
+  Promise.all([
+    context.getMatches(request.query),
+    context.getMatchCount(request.query),
+  ]).then((results: [Match[], number]) => {
+    response.status(200).json({ matches: results[0], count: results[1] });
   }).catch((error: Error) => {
     response.status(400).send(error.message);
   });

@@ -33,7 +33,7 @@ export class MatchQuery {
 
     const playerNames = [query.p1, query.p2];
     for (let i = 0; i < 2; i++) {
-      const playerName = playerNames[i] ?? playerNames[1 - i];
+      const playerName = playerNames[i];
 
       if (playerName) {
         const foundPlayers = players.filter((player: Player) => {
